@@ -2,12 +2,13 @@
 
 import { useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
-import { Plus, FileSpreadsheet, Search, Pencil, Trash2, X, Upload, Camera } from 'lucide-react';
+import { Plus, FileSpreadsheet, Search, Pencil, Trash2, X, Upload } from 'lucide-react';
 import { Spinner } from '@/components/Spinner';
 
 interface AttendanceRecord {
   _id: string;
   employeeName: string;
+  phone: string;
   project?: string;
   date: string;
   inTime?: string;
@@ -22,6 +23,7 @@ interface AttendanceRecord {
 
 const EMPTY_FORM = {
   employeeName: '',
+  phone: '',
   project: '',
   date: '',
   inTime: '',
@@ -98,6 +100,7 @@ export function AttendanceClient() {
   function openEdit(r: AttendanceRecord) {
     setForm({
       employeeName: r.employeeName,
+      phone: r.phone || '',
       project: r.project || '',
       date: r.date,
       inTime: r.inTime || '',
@@ -136,6 +139,8 @@ export function AttendanceClient() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!form.employeeName.trim()) { toast.error('Employee name required'); return; }
+    if (!form.phone.trim()) { toast.error('Mobile number required'); return; }
+    if (!/^\d{10}$/.test(form.phone.trim())) { toast.error('Enter a valid 10-digit mobile number'); return; }
     setSubmitting(true);
     try {
       let inPhoto = form.inPhoto;
@@ -192,10 +197,7 @@ export function AttendanceClient() {
     }
   }
 
-  // Unique projects for filter dropdown
   const projects = Array.from(new Set(records.map((r) => r.project).filter(Boolean)));
-
-  // Pagination
   const totalPages = Math.ceil(records.length / PER_PAGE);
   const paginated = records.slice((page - 1) * PER_PAGE, page * PER_PAGE);
 
@@ -207,13 +209,11 @@ export function AttendanceClient() {
 
   return (
     <div className="space-y-4">
-      {/* Page header */}
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Attendance Tracker</h1>
         <p className="text-gray-500 text-sm mt-0.5">Manual Attendance Management</p>
       </div>
 
-      {/* Attendance List card */}
       <div className="bg-white border border-[var(--border)] rounded-xl shadow-soft">
         {/* Card header */}
         <div className="px-5 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--border)]">
@@ -281,6 +281,7 @@ export function AttendanceClient() {
                   <tr>
                     <th className="px-4 py-3 text-left">Date</th>
                     <th className="px-4 py-3 text-left">Employee Name</th>
+                    <th className="px-4 py-3 text-left">Mobile</th>
                     <th className="px-4 py-3 text-left">Project</th>
                     <th className="px-4 py-3 text-left">IN Photo</th>
                     <th className="px-4 py-3 text-left">IN Time</th>
@@ -295,9 +296,8 @@ export function AttendanceClient() {
                   {paginated.map((r) => (
                     <tr key={r._id} className="hover:bg-gray-50/50">
                       <td className="px-4 py-3 font-medium whitespace-nowrap">{r.date}</td>
-                      <td className="px-4 py-3">
-                        <div className="font-medium">{r.employeeName}</div>
-                      </td>
+                      <td className="px-4 py-3 font-medium">{r.employeeName}</td>
+                      <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{r.phone || <span className="text-gray-300">—</span>}</td>
                       <td className="px-4 py-3 text-gray-600">{r.project || <span className="text-gray-300">—</span>}</td>
                       <td className="px-4 py-3">
                         {r.inPhoto ? (
@@ -370,7 +370,7 @@ export function AttendanceClient() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Date */}
                 <div>
-                  <label className="label">Date</label>
+                  <label className="label">Date <span className="text-red-500">*</span></label>
                   <input type="date" className="input" value={form.date}
                     onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))} required />
                 </div>
@@ -379,6 +379,14 @@ export function AttendanceClient() {
                   <label className="label">Employee Name <span className="text-red-500">*</span></label>
                   <input className="input" placeholder="Full name" value={form.employeeName}
                     onChange={(e) => setForm((f) => ({ ...f, employeeName: e.target.value }))} required />
+                </div>
+                {/* Mobile Number */}
+                <div>
+                  <label className="label">Mobile Number <span className="text-red-500">*</span></label>
+                  <input className="input" placeholder="10-digit mobile number" value={form.phone}
+                    maxLength={10}
+                    onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value.replace(/\D/g, '') }))}
+                    required />
                 </div>
                 {/* Project */}
                 <div>
@@ -412,7 +420,6 @@ export function AttendanceClient() {
 
               {/* Photos */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* IN Photo */}
                 <div>
                   <label className="label">IN Photo (optional)</label>
                   {inPhotoPreview || form.inPhoto ? (
@@ -435,7 +442,6 @@ export function AttendanceClient() {
                     </div>
                   )}
                 </div>
-                {/* OUT Photo */}
                 <div>
                   <label className="label">OUT Photo (optional)</label>
                   {outPhotoPreview || form.outPhoto ? (

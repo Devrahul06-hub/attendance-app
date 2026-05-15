@@ -7,14 +7,17 @@ import { getSession } from '@/lib/auth';
 export async function GET(req: NextRequest) {
   const session = getSession();
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  if (session.role !== 'admin') return NextResponse.json({ error: 'Admins only' }, { status: 403 });
 
   const url = new URL(req.url);
-  const hrId = url.searchParams.get('hrId');
   const date = url.searchParams.get('date');
 
   const query: any = {};
-  if (hrId) query.markedByHrId = hrId;
+  if (session.role === 'admin') {
+    const hrId = url.searchParams.get('hrId');
+    if (hrId) query.markedByHrId = hrId;
+  } else {
+    query.markedByHrId = session.userId;
+  }
   if (date) query.date = date;
 
   await dbConnect();

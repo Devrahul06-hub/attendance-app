@@ -7,9 +7,10 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   const session = getSession();
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { employeeName, project, date, inTime, outTime, status, remarks, inPhoto, outPhoto } = await req.json();
+  const { employeeName, phone, project, date, inTime, outTime, status, remarks, inPhoto, outPhoto } = await req.json();
 
   if (!employeeName?.trim()) return NextResponse.json({ error: 'Employee name is required' }, { status: 400 });
+  if (!phone?.trim()) return NextResponse.json({ error: 'Mobile number is required' }, { status: 400 });
   if (!['present', 'absent', 'half-day'].includes(status)) return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
 
   await dbConnect();
@@ -20,7 +21,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
   const record = await Attendance.findOneAndUpdate(
     filter,
-    { employeeName: employeeName.trim(), project: project?.trim() || '', date, inTime, outTime, status, remarks, inPhoto, outPhoto },
+    { employeeName: employeeName.trim(), phone: phone.trim(), project: project?.trim() || '', date, inTime, outTime, status, remarks, inPhoto, outPhoto },
     { new: true }
   );
 

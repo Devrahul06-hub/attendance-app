@@ -12,17 +12,29 @@ export async function POST(req: NextRequest) {
   const session = getSession();
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { employeeName, project, date, inTime, outTime, status, remarks, inPhoto, outPhoto } = await req.json();
+  const { employeeName, phone, project, date, inTime, outTime, status, remarks, inPhoto, outPhoto } = await req.json();
 
   if (!employeeName?.trim()) return NextResponse.json({ error: 'Employee name is required' }, { status: 400 });
+  if (!phone?.trim()) return NextResponse.json({ error: 'Mobile number is required' }, { status: 400 });
   if (!['present', 'absent', 'half-day'].includes(status)) return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
+
+  const attendanceDate = date || todayDateString();
 
   await dbConnect();
 
+  const duplicate = await Attendance.findOne({ phone: phone.trim(), date: attendanceDate });
+  if (duplicate) {
+    return NextResponse.json(
+      { error: `Attendance already marked for this employee on ${attendanceDate}` },
+      { status: 409 }
+    );
+  }
+
   const record = await Attendance.create({
     employeeName: employeeName.trim(),
+    phone: phone.trim(),
     project: project?.trim() || '',
-    date: date || todayDateString(),
+    date: attendanceDate,
     inTime: inTime || '',
     outTime: outTime || '',
     status,

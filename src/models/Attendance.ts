@@ -2,6 +2,7 @@ import mongoose, { Schema, Document, Model } from 'mongoose';
 
 export interface IAttendance extends Document {
   employeeName: string;
+  phone: string;
   project?: string;
   date: string;
   inTime?: string;
@@ -19,6 +20,7 @@ export interface IAttendance extends Document {
 const AttendanceSchema = new Schema<IAttendance>(
   {
     employeeName: { type: String, required: true, trim: true },
+    phone: { type: String, required: true, trim: true },
     project: { type: String, trim: true },
     date: { type: String, required: true, index: true },
     inTime: { type: String },

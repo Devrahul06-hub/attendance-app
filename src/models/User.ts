@@ -5,6 +5,12 @@ export interface IUser extends Document {
   email: string;
   passwordHash: string;
   role: 'admin' | 'employee';
+  employeeId?: string;
+  designation?: string;
+  project?: string;
+  phone?: string;
+  status: 'active' | 'inactive';
+  joinDate?: string;
   createdAt: Date;
 }
 
@@ -25,6 +31,12 @@ const UserSchema = new Schema<IUser>(
       enum: ['admin', 'employee'],
       default: 'employee',
     },
+    employeeId: { type: String, trim: true },
+    designation: { type: String, trim: true },
+    project: { type: String, trim: true },
+    phone: { type: String, trim: true },
+    status: { type: String, enum: ['active', 'inactive'], default: 'active' },
+    joinDate: { type: String, trim: true },
   },
   { timestamps: true }
 );

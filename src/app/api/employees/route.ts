@@ -7,22 +7,32 @@ export async function POST(req: NextRequest) {
   const session = getSession();
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { name, employeeId, project, phone } = await req.json();
+  const { name, employeeId, designation, project, phone, email, status, joinDate } = await req.json();
 
-  if (!name?.trim() || !employeeId?.trim()) {
-    return NextResponse.json({ error: 'Name and Employee ID are required' }, { status: 400 });
+  if (!name?.trim()) {
+    return NextResponse.json({ error: 'Employee name is required' }, { status: 400 });
+  }
+  if (!phone?.trim()) {
+    return NextResponse.json({ error: 'Mobile number is required' }, { status: 400 });
   }
 
   await dbConnect();
 
-  const existing = await Employee.findOne({ employeeId: employeeId.trim() });
-  if (existing) return NextResponse.json({ error: 'Employee ID already exists' }, { status: 409 });
+  const trimmedId = employeeId?.trim() || undefined;
+  if (trimmedId) {
+    const existing = await Employee.findOne({ employeeId: trimmedId });
+    if (existing) return NextResponse.json({ error: 'Employee ID already exists' }, { status: 409 });
+  }
 
   const employee = await Employee.create({
     name: name.trim(),
-    employeeId: employeeId.trim(),
+    ...(trimmedId && { employeeId: trimmedId }),
+    designation: designation?.trim() || '',
     project: project?.trim() || '',
     phone: phone?.trim() || '',
+    email: email?.toLowerCase().trim() || '',
+    status: status || 'active',
+    joinDate: joinDate || '',
     addedByHrId: session.userId,
     addedByHrName: session.name,
   });

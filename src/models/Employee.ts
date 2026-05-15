@@ -2,9 +2,13 @@ import mongoose, { Schema, Document, Model } from 'mongoose';
 
 export interface IEmployee extends Document {
   name: string;
-  employeeId: string;
+  employeeId?: string;
+  designation?: string;
   project?: string;
   phone?: string;
+  email?: string;
+  status: 'active' | 'inactive';
+  joinDate?: string;
   addedByHrId: string;
   addedByHrName: string;
   createdAt: Date;
@@ -13,9 +17,13 @@ export interface IEmployee extends Document {
 const EmployeeSchema = new Schema<IEmployee>(
   {
     name: { type: String, required: true, trim: true },
-    employeeId: { type: String, required: true, trim: true, unique: true },
+    employeeId: { type: String, trim: true, unique: true, sparse: true },
+    designation: { type: String, trim: true },
     project: { type: String, trim: true },
     phone: { type: String, trim: true },
+    email: { type: String, trim: true, lowercase: true },
+    status: { type: String, enum: ['active', 'inactive'], default: 'active' },
+    joinDate: { type: String, trim: true },
     addedByHrId: { type: String, required: true },
     addedByHrName: { type: String, required: true },
   },
