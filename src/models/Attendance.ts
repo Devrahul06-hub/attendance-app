@@ -2,11 +2,14 @@ import mongoose, { Schema, Document, Model } from 'mongoose';
 
 export interface IAttendance extends Document {
   employeeName: string;
+  project?: string;
   date: string;
-  time: string;
-  status: 'present' | 'absent';
+  inTime?: string;
+  outTime?: string;
+  status: 'present' | 'absent' | 'half-day';
   remarks: string;
-  imageUrl?: string;
+  inPhoto?: string;
+  outPhoto?: string;
   markedByHrId: string;
   markedByHrName: string;
   markedByHrEmail: string;
@@ -16,11 +19,14 @@ export interface IAttendance extends Document {
 const AttendanceSchema = new Schema<IAttendance>(
   {
     employeeName: { type: String, required: true, trim: true },
+    project: { type: String, trim: true },
     date: { type: String, required: true, index: true },
-    time: { type: String, required: true },
-    status: { type: String, enum: ['present', 'absent'], required: true },
+    inTime: { type: String },
+    outTime: { type: String },
+    status: { type: String, enum: ['present', 'absent', 'half-day'], required: true },
     remarks: { type: String, default: '' },
-    imageUrl: { type: String },
+    inPhoto: { type: String },
+    outPhoto: { type: String },
     markedByHrId: { type: String, required: true, index: true },
     markedByHrName: { type: String, required: true },
     markedByHrEmail: { type: String, required: true },

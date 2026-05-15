@@ -45,10 +45,11 @@ body { font-feature-settings: 'cv02','cv03','cv04','cv11'; }
   .badge {
     @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium;
   }
-  .badge-present { @apply badge bg-emerald-50 text-emerald-700 border border-emerald-200; }
-  .badge-absent  { @apply badge bg-red-50 text-red-700 border border-red-200; }
-  .badge-admin   { @apply badge bg-brand-50 text-brand-700 border border-brand-200; }
-  .badge-employee{ @apply badge bg-gray-100 text-gray-700 border border-gray-200; }
+  .badge-present  { @apply badge bg-emerald-50 text-emerald-700 border border-emerald-200; }
+  .badge-absent   { @apply badge bg-red-50 text-red-700 border border-red-200; }
+  .badge-halfday  { @apply badge bg-orange-50 text-orange-700 border border-orange-200; }
+  .badge-admin    { @apply badge bg-brand-50 text-brand-700 border border-brand-200; }
+  .badge-employee { @apply badge bg-gray-100 text-gray-700 border border-gray-200; }
 }
 
 /* Custom scrollbar */

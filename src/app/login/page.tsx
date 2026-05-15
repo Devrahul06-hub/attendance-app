@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import toast from 'react-hot-toast';
 import { Logo } from '@/components/Logo';
 import { Spinner } from '@/components/Spinner';
@@ -58,12 +57,7 @@ export default function LoginPage() {
       <div className="lg:flex-1 flex items-center justify-center p-6 sm:p-12 bg-[var(--bg)]">
         <div className="w-full max-w-md">
           <h2 className="text-2xl font-bold mb-1">Sign in to your account</h2>
-          <p className="text-gray-500 text-sm mb-8">
-            Don&apos;t have one?{' '}
-            <Link href="/signup" className="text-brand-600 font-medium hover:underline">
-              Create an account
-            </Link>
-          </p>
+          <p className="text-gray-500 text-sm mb-8">Enter your credentials to access the system.</p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>

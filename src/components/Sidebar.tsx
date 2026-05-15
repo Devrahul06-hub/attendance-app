@@ -1,15 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import {
-  LayoutDashboard,
-  CalendarCheck2,
-  Users,
-  X,
-} from 'lucide-react';
+import { usePathname, useRouter } from 'next/navigation';
+import { LayoutDashboard, CalendarCheck2, LogOut, UserPlus, ShieldPlus } from 'lucide-react';
 import { Logo } from './Logo';
 import clsx from 'clsx';
+import toast from 'react-hot-toast';
 
 interface SidebarProps {
   role: 'admin' | 'employee';
@@ -19,46 +15,47 @@ interface SidebarProps {
 
 export function Sidebar({ role, open, onClose }: SidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
 
-  const items = [
+  const navItems = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/attendance', label: 'HR Panel', icon: CalendarCheck2 },
-    ...(role === 'admin'
-      ? [{ href: '/admin', label: 'Admin Panel', icon: Users }]
-      : []),
+    { href: '/attendance', label: 'Attendance', icon: CalendarCheck2 },
+    ...(role === 'employee' ? [{ href: '/create-employee', label: 'Create Employee', icon: UserPlus }] : []),
+    ...(role === 'admin' ? [
+      { href: '/create-hr', label: 'Create HR', icon: ShieldPlus },
+      { href: '/admin', label: 'Admin Panel', icon: LayoutDashboard },
+    ] : []),
   ];
+
+  async function handleLogout() {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    toast.success('Logged out');
+    router.push('/login');
+    router.refresh();
+  }
 
   return (
     <>
-      {/* Mobile backdrop */}
       {open && (
-        <div
-          className="fixed inset-0 bg-black/40 z-30 lg:hidden"
-          onClick={onClose}
-          aria-hidden
-        />
+        <div className="fixed inset-0 bg-black/50 z-30 lg:hidden" onClick={onClose} aria-hidden />
       )}
 
       <aside
         className={clsx(
-          'fixed inset-y-0 left-0 z-40 w-64 bg-white border-r border-[var(--border)]',
+          'fixed inset-y-0 left-0 z-40 w-64 flex flex-col',
+          'bg-[#0d1b2a] border-r border-white/10',
           'transform transition-transform lg:translate-x-0 lg:static lg:shrink-0',
           open ? 'translate-x-0' : '-translate-x-full'
         )}
       >
-        <div className="h-16 px-5 flex items-center justify-between border-b border-[var(--border)]">
+        {/* Logo */}
+        <div className="h-16 px-5 flex items-center border-b border-white/10">
           <Logo />
-          <button
-            onClick={onClose}
-            className="lg:hidden p-1.5 rounded-md hover:bg-gray-100"
-            aria-label="Close sidebar"
-          >
-            <X size={18} />
-          </button>
         </div>
 
-        <nav className="p-3 space-y-1">
-          {items.map((item) => {
+        {/* Nav */}
+        <nav className="flex-1 p-3 space-y-1 mt-2">
+          {navItems.map((item) => {
             const active = pathname === item.href || pathname.startsWith(item.href + '/');
             const Icon = item.icon;
             return (
@@ -69,8 +66,8 @@ export function Sidebar({ role, open, onClose }: SidebarProps) {
                 className={clsx(
                   'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition',
                   active
-                    ? 'bg-brand-50 text-brand-700'
-                    : 'text-gray-700 hover:bg-gray-100'
+                    ? 'bg-blue-600 text-white'
+                    : 'text-gray-300 hover:bg-white/10 hover:text-white'
                 )}
               >
                 <Icon size={18} />
@@ -80,8 +77,15 @@ export function Sidebar({ role, open, onClose }: SidebarProps) {
           })}
         </nav>
 
-        <div className="absolute bottom-0 left-0 right-0 p-4">
-          <div className="text-xs text-gray-400 px-3">v0.1 · Prototype</div>
+        {/* Logout */}
+        <div className="p-3 border-t border-white/10">
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-300 hover:bg-white/10 hover:text-white transition"
+          >
+            <LogOut size={18} />
+            Logout
+          </button>
         </div>
       </aside>
     </>

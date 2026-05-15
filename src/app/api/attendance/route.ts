@@ -8,32 +8,27 @@ function todayDateString() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-function timeString() {
-  return new Date().toTimeString().slice(0, 8);
-}
-
 export async function POST(req: NextRequest) {
   const session = getSession();
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { employeeName, status, remarks, imageUrl } = await req.json();
+  const { employeeName, project, date, inTime, outTime, status, remarks, inPhoto, outPhoto } = await req.json();
 
-  if (!employeeName?.trim()) {
-    return NextResponse.json({ error: 'Employee name is required' }, { status: 400 });
-  }
-  if (!['present', 'absent'].includes(status)) {
-    return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
-  }
+  if (!employeeName?.trim()) return NextResponse.json({ error: 'Employee name is required' }, { status: 400 });
+  if (!['present', 'absent', 'half-day'].includes(status)) return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
 
   await dbConnect();
 
   const record = await Attendance.create({
     employeeName: employeeName.trim(),
-    date: todayDateString(),
-    time: timeString(),
+    project: project?.trim() || '',
+    date: date || todayDateString(),
+    inTime: inTime || '',
+    outTime: outTime || '',
     status,
     remarks: remarks || '',
-    imageUrl: imageUrl || undefined,
+    inPhoto: inPhoto || undefined,
+    outPhoto: outPhoto || undefined,
     markedByHrId: session.userId,
     markedByHrName: session.name,
     markedByHrEmail: session.email,
@@ -42,15 +37,24 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ record });
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const session = getSession();
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
+  const url = new URL(req.url);
+  const date = url.searchParams.get('date');
+  const project = url.searchParams.get('project');
+  const status = url.searchParams.get('status');
+  const search = url.searchParams.get('search');
+
+  const query: any = { markedByHrId: session.userId };
+  if (date) query.date = date;
+  if (project) query.project = { $regex: project, $options: 'i' };
+  if (status && status !== 'all') query.status = status;
+  if (search) query.employeeName = { $regex: search, $options: 'i' };
+
   await dbConnect();
-  const records = await Attendance.find({ markedByHrId: session.userId })
-    .sort({ date: -1, time: -1 })
-    .limit(200)
-    .lean();
+  const records = await Attendance.find(query).sort({ date: -1, createdAt: -1 }).limit(500).lean();
 
   return NextResponse.json({ records });
 }

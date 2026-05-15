@@ -22,13 +22,16 @@ export async function GET(req: NextRequest) {
 
   const rows = records.map((r: any) => ({
     'Employee Name': r.employeeName,
+    Project: r.project || '',
     Date: r.date,
-    Time: r.time,
+    'IN Time': r.inTime || '',
+    'OUT Time': r.outTime || '',
     Status: r.status,
-    Remarks: r.remarks || '',
+    'HR Remarks': r.remarks || '',
     'Marked By (HR)': r.markedByHrName,
     'HR Email': r.markedByHrEmail,
-    'Photo URL': (r.imageUrl || '').startsWith('data:') ? '(embedded image)' : (r.imageUrl || '').slice(0, 500),
+    'IN Photo': (r.inPhoto || '').startsWith('data:') ? '(image)' : (r.inPhoto || '').slice(0, 500),
+    'OUT Photo': (r.outPhoto || '').startsWith('data:') ? '(image)' : (r.outPhoto || '').slice(0, 500),
   }));
 
   const worksheet = XLSX.utils.json_to_sheet(rows);

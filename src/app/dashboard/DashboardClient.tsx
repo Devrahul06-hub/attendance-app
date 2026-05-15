@@ -3,8 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
-  CalendarCheck2, Clock, TrendingUp, ArrowRight,
-  CheckCircle2, XCircle,
+  CalendarCheck2, Clock, TrendingUp, ArrowRight, CheckCircle2, XCircle,
 } from 'lucide-react';
 import { Spinner } from '@/components/Spinner';
 
@@ -121,45 +120,6 @@ export function DashboardClient({ user }: DashboardClientProps) {
         />
       </div>
 
-      {/* Recent activity */}
-      <div className="card overflow-hidden">
-        <div className="px-5 py-4 border-b border-[var(--border)] flex items-center justify-between">
-          <h2 className="font-semibold">Recent activity</h2>
-          <Link href="/attendance" className="text-sm text-brand-600 hover:underline">
-            See all
-          </Link>
-        </div>
-        {records.length === 0 ? (
-          <div className="p-10 text-center text-gray-500 text-sm">
-            No attendance records yet. Mark your first one to get started.
-          </div>
-        ) : (
-          <ul className="divide-y divide-[var(--border)]">
-            {records.slice(0, 5).map((r) => (
-              <li key={r._id} className="px-5 py-3.5 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <span
-                    className={
-                      r.status === 'present' ? 'badge-present' : 'badge-absent'
-                    }
-                  >
-                    {r.status}
-                  </span>
-                  <div>
-                    <div className="text-sm font-medium">{r.date}</div>
-                    <div className="text-xs text-gray-500">at {r.time}</div>
-                  </div>
-                </div>
-                {r.remarks && (
-                  <div className="text-xs text-gray-500 max-w-xs truncate hidden sm:block">
-                    &ldquo;{r.remarks}&rdquo;
-                  </div>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
     </div>
   );
 }
