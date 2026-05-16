@@ -4,7 +4,8 @@ export interface IEmployee extends Document {
   name: string;
   employeeId?: string;
   designation?: string;
-  project?: string;
+  district?: string;
+  taluka?: string;
   phone?: string;
   email?: string;
   status: 'active' | 'inactive';
@@ -19,7 +20,8 @@ const EmployeeSchema = new Schema<IEmployee>(
     name: { type: String, required: true, trim: true },
     employeeId: { type: String, trim: true, unique: true, sparse: true },
     designation: { type: String, trim: true },
-    project: { type: String, trim: true },
+    district: { type: String, trim: true },
+    taluka: { type: String, trim: true },
     phone: { type: String, trim: true },
     email: { type: String, trim: true, lowercase: true },
     status: { type: String, enum: ['active', 'inactive'], default: 'active' },

@@ -7,7 +7,7 @@ export async function POST(req: NextRequest) {
   const session = getSession();
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { name, employeeId, designation, project, phone, email, status, joinDate } = await req.json();
+  const { name, employeeId, designation, district, taluka, phone, email, status, joinDate } = await req.json();
 
   if (!name?.trim()) {
     return NextResponse.json({ error: 'Employee name is required' }, { status: 400 });
@@ -28,7 +28,8 @@ export async function POST(req: NextRequest) {
     name: name.trim(),
     ...(trimmedId && { employeeId: trimmedId }),
     designation: designation?.trim() || '',
-    project: project?.trim() || '',
+    district: district?.trim() || '',
+    taluka: taluka?.trim() || '',
     phone: phone?.trim() || '',
     email: email?.toLowerCase().trim() || '',
     status: status || 'active',
@@ -45,6 +46,7 @@ export async function GET() {
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   await dbConnect();
-  const employees = await Employee.find({}).sort({ createdAt: -1 }).lean();
+  const query = session.role === 'employee' ? { addedByHrId: session.userId } : {};
+  const employees = await Employee.find(query).sort({ createdAt: -1 }).lean();
   return NextResponse.json({ employees });
 }

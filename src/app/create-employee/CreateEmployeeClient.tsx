@@ -4,13 +4,15 @@ import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { UserPlus, Pencil, Trash2, X } from 'lucide-react';
 import { Spinner } from '@/components/Spinner';
+import { maharashtraData, districts } from '@/data/maharashtra';
 
 interface Employee {
   _id: string;
   name: string;
-  employeeId: string;
+  employeeId?: string;
   designation?: string;
-  project?: string;
+  district?: string;
+  taluka?: string;
   phone?: string;
   email?: string;
   status: 'active' | 'inactive';
@@ -20,7 +22,7 @@ interface Employee {
 }
 
 const emptyForm = {
-  name: '', employeeId: '', designation: '', project: '',
+  name: '', employeeId: '', designation: '', district: '', taluka: '',
   phone: '', email: '', status: 'active', joinDate: '',
 };
 
@@ -69,9 +71,10 @@ export function CreateEmployeeClient() {
     setEditTarget(emp);
     setEditForm({
       name: emp.name,
-      employeeId: emp.employeeId,
+      employeeId: emp.employeeId || '',
       designation: emp.designation || '',
-      project: emp.project || '',
+      district: emp.district || '',
+      taluka: emp.taluka || '',
       phone: emp.phone || '',
       email: emp.email || '',
       status: emp.status,
@@ -142,9 +145,21 @@ export function CreateEmployeeClient() {
               onChange={(e) => setForm({ ...form, designation: e.target.value })} />
           </div>
           <div>
-            <label className="label">Project / Department</label>
-            <input className="input" placeholder="e.g. Pune Survey Project" value={form.project}
-              onChange={(e) => setForm({ ...form, project: e.target.value })} />
+            <label className="label">District</label>
+            <select className="input" value={form.district}
+              onChange={(e) => setForm({ ...form, district: e.target.value, taluka: '' })}>
+              <option value="">Select District</option>
+              {districts.map((d) => <option key={d} value={d}>{d}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="label">Taluka</label>
+            <select className="input" value={form.taluka}
+              onChange={(e) => setForm({ ...form, taluka: e.target.value })}
+              disabled={!form.district}>
+              <option value="">{form.district ? 'Select Taluka' : 'Select District first'}</option>
+              {(maharashtraData[form.district] || []).map((t) => <option key={t} value={t}>{t}</option>)}
+            </select>
           </div>
           <div>
             <label className="label">Phone <span className="text-red-500">*</span></label>
@@ -195,7 +210,8 @@ export function CreateEmployeeClient() {
                   <th className="px-4 py-3 text-left">Emp ID</th>
                   <th className="px-4 py-3 text-left">Emp Name</th>
                   <th className="px-4 py-3 text-left">Designation</th>
-                  <th className="px-4 py-3 text-left">Project</th>
+                  <th className="px-4 py-3 text-left">District</th>
+                  <th className="px-4 py-3 text-left">Taluka</th>
                   <th className="px-4 py-3 text-left">Phone</th>
                   <th className="px-4 py-3 text-left">Email</th>
                   <th className="px-4 py-3 text-left">Status</th>
@@ -207,10 +223,11 @@ export function CreateEmployeeClient() {
                 {employees.map((emp, i) => (
                   <tr key={emp._id} className="hover:bg-gray-50/50">
                     <td className="px-4 py-3 text-gray-500">{i + 1}</td>
-                    <td className="px-4 py-3 font-medium text-blue-600">{emp.employeeId}</td>
+                    <td className="px-4 py-3 font-medium text-blue-600">{emp.employeeId || <span className="text-gray-300">—</span>}</td>
                     <td className="px-4 py-3 font-medium">{emp.name}</td>
                     <td className="px-4 py-3 text-gray-600">{emp.designation || <span className="text-gray-300">—</span>}</td>
-                    <td className="px-4 py-3 text-gray-600">{emp.project || <span className="text-gray-300">—</span>}</td>
+                    <td className="px-4 py-3 text-gray-600">{emp.district || <span className="text-gray-300">—</span>}</td>
+                    <td className="px-4 py-3 text-gray-600">{emp.taluka || <span className="text-gray-300">—</span>}</td>
                     <td className="px-4 py-3 text-gray-600">{emp.phone || <span className="text-gray-300">—</span>}</td>
                     <td className="px-4 py-3 text-gray-600">{emp.email || <span className="text-gray-300">—</span>}</td>
                     <td className="px-4 py-3">
@@ -273,14 +290,27 @@ export function CreateEmployeeClient() {
                   onChange={(e) => setEditForm({ ...editForm, designation: e.target.value })} />
               </div>
               <div>
-                <label className="label">Project / Department</label>
-                <input className="input" value={editForm.project}
-                  onChange={(e) => setEditForm({ ...editForm, project: e.target.value })} />
+                <label className="label">District</label>
+                <select className="input" value={editForm.district}
+                  onChange={(e) => setEditForm({ ...editForm, district: e.target.value, taluka: '' })}>
+                  <option value="">Select District</option>
+                  {districts.map((d) => <option key={d} value={d}>{d}</option>)}
+                </select>
               </div>
               <div>
-                <label className="label">Phone</label>
-                <input className="input" value={editForm.phone}
-                  onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })} />
+                <label className="label">Taluka</label>
+                <select className="input" value={editForm.taluka}
+                  onChange={(e) => setEditForm({ ...editForm, taluka: e.target.value })}
+                  disabled={!editForm.district}>
+                  <option value="">{editForm.district ? 'Select Taluka' : 'Select District first'}</option>
+                  {(maharashtraData[editForm.district] || []).map((t) => <option key={t} value={t}>{t}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="label">Phone <span className="text-red-500">*</span></label>
+                <input className="input" value={editForm.phone} required
+                  onChange={(e) => setEditForm({ ...editForm, phone: e.target.value.replace(/\D/g, '') })}
+                  maxLength={10} />
               </div>
               <div>
                 <label className="label">Email</label>
