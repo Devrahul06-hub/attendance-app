@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
-import { Plus, FileSpreadsheet, Search, Pencil, Trash2, X, Upload } from 'lucide-react';
+import { UserPlus, FileSpreadsheet, Search, Pencil, Trash2, X, Upload } from 'lucide-react';
 import { Spinner } from '@/components/Spinner';
 
 interface AttendanceRecord {
@@ -224,9 +224,9 @@ export function AttendanceClient() {
               {exporting ? <Spinner size={15} /> : <FileSpreadsheet size={15} />}
               Export Excel
             </button>
-            <button onClick={openAdd} className="btn-primary text-sm py-2">
-              <Plus size={15} /> Add Attendance
-            </button>
+            <a href="/create-employee" className="btn-primary text-sm py-2 inline-flex items-center gap-1.5">
+              <UserPlus size={15} /> Create Employee
+            </a>
           </div>
         </div>
 

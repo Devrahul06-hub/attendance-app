@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, CalendarCheck2, LogOut, UserPlus, ShieldPlus } from 'lucide-react';
+import { LayoutDashboard, CalendarCheck2, LogOut, ShieldPlus } from 'lucide-react';
 import { Logo } from './Logo';
 import clsx from 'clsx';
 import toast from 'react-hot-toast';
@@ -20,7 +20,6 @@ export function Sidebar({ role, open, onClose }: SidebarProps) {
   const navItems = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/attendance', label: 'Attendance', icon: CalendarCheck2 },
-    ...(role === 'employee' ? [{ href: '/create-employee', label: 'Create Employee', icon: UserPlus }] : []),
     ...(role === 'admin' ? [
       { href: '/create-hr', label: 'Create HR', icon: ShieldPlus },
       { href: '/admin', label: 'Admin Panel', icon: LayoutDashboard },
