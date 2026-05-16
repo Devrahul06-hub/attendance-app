@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { UserPlus, Search } from 'lucide-react';
 import { Spinner } from '@/components/Spinner';
+import { EmployeeCalendarModal } from '@/components/EmployeeCalendarModal';
 
 interface Employee {
   _id: string;
@@ -21,6 +22,7 @@ export function AttendanceClient() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [calendarEmployee, setCalendarEmployee] = useState<Employee | null>(null);
 
   useEffect(() => {
     fetch('/api/employees')
@@ -36,6 +38,7 @@ export function AttendanceClient() {
   );
 
   return (
+    <>
     <div className="space-y-4">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Attendance Tracker</h1>
@@ -93,7 +96,10 @@ export function AttendanceClient() {
                   <tr key={emp._id} className="hover:bg-gray-50/50">
                     <td className="px-4 py-3 text-gray-500">{i + 1}</td>
                     <td className="px-4 py-3 font-medium text-blue-600">{emp.employeeId || <span className="text-gray-300">—</span>}</td>
-                    <td className="px-4 py-3 font-medium">{emp.name}</td>
+                    <td className="px-4 py-3 font-medium">
+                      <button onClick={() => setCalendarEmployee(emp)}
+                        className="text-blue-600 hover:underline text-left">{emp.name}</button>
+                    </td>
                     <td className="px-4 py-3 text-gray-600">{emp.designation || <span className="text-gray-300">—</span>}</td>
                     <td className="px-4 py-3 text-gray-600">{emp.district || <span className="text-gray-300">—</span>}</td>
                     <td className="px-4 py-3 text-gray-600">{emp.taluka || <span className="text-gray-300">—</span>}</td>
@@ -119,5 +125,13 @@ export function AttendanceClient() {
         )}
       </div>
     </div>
+
+    {calendarEmployee && (
+      <EmployeeCalendarModal
+        employee={calendarEmployee}
+        onClose={() => setCalendarEmployee(null)}
+      />
+    )}
+    </>
   );
 }
