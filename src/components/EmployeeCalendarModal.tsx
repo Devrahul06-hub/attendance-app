@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { ChevronLeft, ChevronRight, X, Upload } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, Upload, Pencil } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Spinner } from '@/components/Spinner';
 
@@ -67,6 +67,7 @@ export function EmployeeCalendarModal({ employee, onClose, onAttendanceAdded }: 
   const [records, setRecords] = useState<AttendanceRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState<string>(todayStr());
+  const [editMode, setEditMode] = useState(false);
   const [form, setForm] = useState({ ...emptyForm });
   const [submitting, setSubmitting] = useState(false);
   const [inPhotoFile, setInPhotoFile] = useState<File | null>(null);
@@ -90,15 +91,39 @@ export function EmployeeCalendarModal({ employee, onClose, onAttendanceAdded }: 
 
   useEffect(() => { loadRecords(); }, [month]); // eslint-disable-line
 
-  function prevMonth() {
-    setCurrentDate((d) => new Date(d.getFullYear(), d.getMonth() - 1, 1));
-  }
-  function nextMonth() {
-    setCurrentDate((d) => new Date(d.getFullYear(), d.getMonth() + 1, 1));
-  }
+  // Reset edit mode when date changes
+  useEffect(() => {
+    setEditMode(false);
+    setInPhotoFile(null); setOutPhotoFile(null);
+    setInPhotoPreview(''); setOutPhotoPreview('');
+  }, [selectedDate]);
+
+  function prevMonth() { setCurrentDate((d) => new Date(d.getFullYear(), d.getMonth() - 1, 1)); }
+  function nextMonth() { setCurrentDate((d) => new Date(d.getFullYear(), d.getMonth() + 1, 1)); }
 
   const recordByDate = Object.fromEntries(records.map((r) => [r.date, r]));
   const selectedRecord = selectedDate ? recordByDate[selectedDate] : null;
+
+  function openAddForm() {
+    setForm({ ...emptyForm });
+    setInPhotoFile(null); setOutPhotoFile(null);
+    setInPhotoPreview(''); setOutPhotoPreview('');
+    setEditMode(false);
+  }
+
+  function openEditForm(rec: AttendanceRecord) {
+    setForm({
+      status: rec.status,
+      inTime: rec.inTime || '',
+      outTime: rec.outTime || '',
+      remarks: rec.remarks || '',
+      inPhoto: rec.inPhoto || '',
+      outPhoto: rec.outPhoto || '',
+    });
+    setInPhotoFile(null); setOutPhotoFile(null);
+    setInPhotoPreview(''); setOutPhotoPreview('');
+    setEditMode(true);
+  }
 
   // Calendar grid
   const year = currentDate.getFullYear();
@@ -125,7 +150,6 @@ export function EmployeeCalendarModal({ employee, onClose, onAttendanceAdded }: 
     calendarCells.push({ dateStr: `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`, day: d, currentMonth: false });
   }
 
-  // Summary counts
   const present = records.filter((r) => r.status === 'present').length;
   const absent = records.filter((r) => r.status === 'absent').length;
   const halfDay = records.filter((r) => r.status === 'half-day').length;
@@ -148,19 +172,8 @@ export function EmployeeCalendarModal({ employee, onClose, onAttendanceAdded }: 
     return data.imageUrl;
   }
 
-  function openDateForm() {
-    setForm({ ...emptyForm });
-    setInPhotoFile(null); setOutPhotoFile(null);
-    setInPhotoPreview(''); setOutPhotoPreview('');
-  }
-
-  useEffect(() => {
-    if (selectedDate && !selectedRecord) openDateForm();
-  }, [selectedDate]); // eslint-disable-line
-
-  async function handleAddAttendance(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.status) { toast.error('Status required'); return; }
     setSubmitting(true);
     try {
       let inPhoto = form.inPhoto;
@@ -168,24 +181,28 @@ export function EmployeeCalendarModal({ employee, onClose, onAttendanceAdded }: 
       if (inPhotoFile) inPhoto = await uploadPhoto(inPhotoFile);
       if (outPhotoFile) outPhoto = await uploadPhoto(outPhotoFile);
 
-      const res = await fetch('/api/attendance', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          employeeName: employee.name,
-          phone: employee.phone,
-          date: selectedDate,
-          status: form.status,
-          inTime: form.inTime,
-          outTime: form.outTime,
-          remarks: form.remarks,
-          inPhoto,
-          outPhoto,
-        }),
-      });
+      const body = {
+        employeeName: employee.name,
+        phone: employee.phone,
+        date: selectedDate,
+        status: form.status,
+        inTime: form.inTime,
+        outTime: form.outTime,
+        remarks: form.remarks,
+        inPhoto,
+        outPhoto,
+      };
+
+      const isEdit = editMode && selectedRecord;
+      const res = await fetch(
+        isEdit ? `/api/attendance/${selectedRecord._id}` : '/api/attendance',
+        { method: isEdit ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }
+      );
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed');
-      toast.success('Attendance added!');
+
+      toast.success(isEdit ? 'Attendance updated!' : 'Attendance added!');
+      setEditMode(false);
       await loadRecords();
       onAttendanceAdded?.();
     } catch (err: any) {
@@ -202,6 +219,7 @@ export function EmployeeCalendarModal({ employee, onClose, onAttendanceAdded }: 
   }
 
   const recentRecords = [...records].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5);
+  const showForm = editMode || !selectedRecord;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-2 sm:p-4">
@@ -235,21 +253,16 @@ export function EmployeeCalendarModal({ employee, onClose, onAttendanceAdded }: 
 
           {/* Calendar */}
           <div className="flex-1 overflow-y-auto p-4 border-r border-gray-100">
-            {/* Month nav */}
             <div className="flex items-center justify-between mb-4">
               <button onClick={prevMonth} className="p-1.5 rounded-lg hover:bg-gray-100"><ChevronLeft size={18} /></button>
               <span className="font-semibold text-base">{MONTHS[monthIndex]} {year}</span>
               <button onClick={nextMonth} className="p-1.5 rounded-lg hover:bg-gray-100"><ChevronRight size={18} /></button>
             </div>
-
-            {/* Day headers */}
             <div className="grid grid-cols-7 mb-1">
               {DAYS.map((d) => (
                 <div key={d} className="text-center text-xs font-medium text-gray-400 py-1">{d}</div>
               ))}
             </div>
-
-            {/* Cells */}
             {loading ? (
               <div className="py-12 flex justify-center"><Spinner size={28} /></div>
             ) : (
@@ -259,18 +272,14 @@ export function EmployeeCalendarModal({ employee, onClose, onAttendanceAdded }: 
                   const isToday = dateStr === today;
                   const isSelected = dateStr === selectedDate;
                   return (
-                    <div
-                      key={dateStr}
+                    <div key={dateStr}
                       onClick={() => currentMonth && setSelectedDate(dateStr)}
                       className={`bg-white min-h-[70px] p-1.5 flex flex-col transition-colors ${
                         currentMonth ? 'cursor-pointer hover:bg-blue-50/60' : 'opacity-30 cursor-default'
-                      } ${isSelected && currentMonth ? 'ring-2 ring-inset ring-blue-500' : ''}`}
-                    >
+                      } ${isSelected && currentMonth ? 'ring-2 ring-inset ring-blue-500' : ''}`}>
                       <div className={`w-6 h-6 flex items-center justify-center rounded-full text-xs font-semibold mb-1 ${
                         isToday ? 'bg-blue-600 text-white' : 'text-gray-700'
-                      }`}>
-                        {day}
-                      </div>
+                      }`}>{day}</div>
                       {rec && (
                         <div className="space-y-0.5">
                           <div className="flex items-center gap-1">
@@ -297,9 +306,7 @@ export function EmployeeCalendarModal({ employee, onClose, onAttendanceAdded }: 
 
             {/* Summary */}
             <div>
-              <h3 className="text-sm font-semibold text-gray-700 mb-2">
-                Attendance Summary ({MONTHS[monthIndex]})
-              </h3>
+              <h3 className="text-sm font-semibold text-gray-700 mb-2">Attendance Summary ({MONTHS[monthIndex]})</h3>
               <div className="grid grid-cols-2 gap-2">
                 {[
                   { label: 'Present', count: present, color: 'text-green-600', bg: 'bg-green-50 border-green-100' },
@@ -318,13 +325,27 @@ export function EmployeeCalendarModal({ employee, onClose, onAttendanceAdded }: 
             {/* Selected Date */}
             {selectedDate && (
               <div>
-                <h3 className="text-sm font-semibold text-gray-700 mb-2">
-                  {new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric', weekday: 'long' })}
-                </h3>
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-sm font-semibold text-gray-700">
+                    {new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', weekday: 'short' })}
+                  </h3>
+                  {selectedRecord && !editMode && (
+                    <button onClick={() => openEditForm(selectedRecord)}
+                      className="flex items-center gap-1 text-xs text-blue-600 hover:bg-blue-50 px-2 py-1 rounded-lg transition-colors">
+                      <Pencil size={12} /> Edit
+                    </button>
+                  )}
+                  {editMode && (
+                    <button onClick={() => setEditMode(false)}
+                      className="text-xs text-gray-400 hover:text-gray-600 px-2 py-1 rounded-lg">
+                      Cancel
+                    </button>
+                  )}
+                </div>
 
-                {selectedRecord ? (
+                {/* View mode */}
+                {selectedRecord && !editMode ? (
                   <div className="space-y-3">
-                    {/* Status badge */}
                     <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${
                       selectedRecord.status === 'present' ? 'bg-green-50 text-green-700 border-green-200' :
                       selectedRecord.status === 'absent' ? 'bg-red-50 text-red-600 border-red-200' :
@@ -333,37 +354,35 @@ export function EmployeeCalendarModal({ employee, onClose, onAttendanceAdded }: 
                       {selectedRecord.status === 'present' ? 'Present' : selectedRecord.status === 'absent' ? 'Absent' : 'Half Day'}
                     </div>
 
-                    {/* IN */}
-                    {(selectedRecord.inTime || selectedRecord.inPhoto) && (
-                      <div className="flex items-center justify-between bg-gray-50 rounded-xl p-3">
+                    {/* IN section */}
+                    <div className="bg-gray-50 rounded-xl p-3 space-y-2">
+                      <div className="flex items-center justify-between">
                         <div>
                           <div className="text-xs text-gray-400 font-medium">IN Time</div>
                           <div className="font-semibold text-sm">{selectedRecord.inTime || '—'}</div>
                         </div>
-                        {selectedRecord.inPhoto && (
-                          <a href={selectedRecord.inPhoto} target="_blank" rel="noopener noreferrer">
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={driveThumbnail(selectedRecord.inPhoto)} alt="IN" className="w-12 h-12 object-cover rounded-lg border" />
-                          </a>
-                        )}
                       </div>
-                    )}
+                      {selectedRecord.inPhoto && (
+                        <a href={selectedRecord.inPhoto} target="_blank" rel="noopener noreferrer">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={driveThumbnail(selectedRecord.inPhoto)} alt="IN" className="w-full h-24 object-cover rounded-lg border" />
+                        </a>
+                      )}
+                    </div>
 
-                    {/* OUT */}
-                    {(selectedRecord.outTime || selectedRecord.outPhoto) && (
-                      <div className="flex items-center justify-between bg-gray-50 rounded-xl p-3">
-                        <div>
-                          <div className="text-xs text-gray-400 font-medium">OUT Time</div>
-                          <div className="font-semibold text-sm">{selectedRecord.outTime || '—'}</div>
-                        </div>
-                        {selectedRecord.outPhoto && (
-                          <a href={selectedRecord.outPhoto} target="_blank" rel="noopener noreferrer">
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={driveThumbnail(selectedRecord.outPhoto)} alt="OUT" className="w-12 h-12 object-cover rounded-lg border" />
-                          </a>
-                        )}
+                    {/* OUT section */}
+                    <div className="bg-gray-50 rounded-xl p-3 space-y-2">
+                      <div>
+                        <div className="text-xs text-gray-400 font-medium">OUT Time</div>
+                        <div className="font-semibold text-sm">{selectedRecord.outTime || '—'}</div>
                       </div>
-                    )}
+                      {selectedRecord.outPhoto && (
+                        <a href={selectedRecord.outPhoto} target="_blank" rel="noopener noreferrer">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={driveThumbnail(selectedRecord.outPhoto)} alt="OUT" className="w-full h-24 object-cover rounded-lg border" />
+                        </a>
+                      )}
+                    </div>
 
                     {selectedRecord.remarks && (
                       <div className="text-xs text-gray-500 bg-gray-50 rounded-xl p-3">
@@ -376,12 +395,13 @@ export function EmployeeCalendarModal({ employee, onClose, onAttendanceAdded }: 
                     )}
                   </div>
                 ) : (
-                  /* Add Attendance Form */
-                  <form onSubmit={handleAddAttendance} className="space-y-3">
-                    <p className="text-xs text-gray-400">No attendance recorded. Add now:</p>
+                  /* Add / Edit Form */
+                  <form onSubmit={handleSubmit} className="space-y-3">
+                    {!editMode && <p className="text-xs text-gray-400">No record. Add attendance:</p>}
 
+                    {/* 1. Status */}
                     <div>
-                      <label className="label text-xs">Status <span className="text-red-500">*</span></label>
+                      <label className="label text-xs">1. Status <span className="text-red-500">*</span></label>
                       <select className="input py-1.5 text-sm" value={form.status}
                         onChange={(e) => setForm((f) => ({ ...f, status: e.target.value as any }))}>
                         <option value="present">Present</option>
@@ -390,72 +410,78 @@ export function EmployeeCalendarModal({ employee, onClose, onAttendanceAdded }: 
                       </select>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2">
+                    {/* 2. IN Time + IN Photo */}
+                    <div className="space-y-2">
                       <div>
-                        <label className="label text-xs">IN Time</label>
+                        <label className="label text-xs">2. IN Time</label>
                         <input type="time" className="input py-1.5 text-sm" value={form.inTime}
                           onChange={(e) => setForm((f) => ({ ...f, inTime: e.target.value }))} />
                       </div>
                       <div>
-                        <label className="label text-xs">OUT Time</label>
-                        <input type="time" className="input py-1.5 text-sm" value={form.outTime}
-                          onChange={(e) => setForm((f) => ({ ...f, outTime: e.target.value }))} />
+                        <label className="label text-xs">IN Photo</label>
+                        {inPhotoPreview || form.inPhoto ? (
+                          <div className="relative inline-block">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={inPhotoPreview || driveThumbnail(form.inPhoto)} alt="IN"
+                              className="w-full h-20 object-cover rounded-lg border" />
+                            <button type="button"
+                              onClick={() => { setInPhotoFile(null); setInPhotoPreview(''); setForm((f) => ({ ...f, inPhoto: '' })); }}
+                              className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-xs">×</button>
+                          </div>
+                        ) : (
+                          <>
+                            <button type="button" onClick={() => inRef.current?.click()}
+                              className="btn-secondary text-xs py-1 px-2 flex items-center gap-1">
+                              <Upload size={11} /> Upload IN Photo
+                            </button>
+                            <input ref={inRef} type="file" accept="image/jpeg,image/png" className="hidden"
+                              onChange={(e) => handlePhotoFile(e.target.files?.[0], 'in')} />
+                          </>
+                        )}
                       </div>
                     </div>
 
-                    {/* IN Photo */}
-                    <div>
-                      <label className="label text-xs">IN Photo</label>
-                      {inPhotoPreview ? (
-                        <div className="relative inline-block">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={inPhotoPreview} alt="IN" className="w-16 h-16 object-cover rounded-lg border" />
-                          <button type="button" onClick={() => { setInPhotoFile(null); setInPhotoPreview(''); }}
-                            className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-500 text-white rounded-full flex items-center justify-center text-xs">×</button>
-                        </div>
-                      ) : (
-                        <>
-                          <button type="button" onClick={() => inRef.current?.click()}
-                            className="btn-secondary text-xs py-1 px-2 flex items-center gap-1">
-                            <Upload size={11} /> Upload
-                          </button>
-                          <input ref={inRef} type="file" accept="image/jpeg,image/png" className="hidden"
-                            onChange={(e) => handlePhotoFile(e.target.files?.[0], 'in')} />
-                        </>
-                      )}
+                    {/* 3. OUT Time + OUT Photo */}
+                    <div className="space-y-2">
+                      <div>
+                        <label className="label text-xs">3. OUT Time</label>
+                        <input type="time" className="input py-1.5 text-sm" value={form.outTime}
+                          onChange={(e) => setForm((f) => ({ ...f, outTime: e.target.value }))} />
+                      </div>
+                      <div>
+                        <label className="label text-xs">OUT Photo</label>
+                        {outPhotoPreview || form.outPhoto ? (
+                          <div className="relative inline-block">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={outPhotoPreview || driveThumbnail(form.outPhoto)} alt="OUT"
+                              className="w-full h-20 object-cover rounded-lg border" />
+                            <button type="button"
+                              onClick={() => { setOutPhotoFile(null); setOutPhotoPreview(''); setForm((f) => ({ ...f, outPhoto: '' })); }}
+                              className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-xs">×</button>
+                          </div>
+                        ) : (
+                          <>
+                            <button type="button" onClick={() => outRef.current?.click()}
+                              className="btn-secondary text-xs py-1 px-2 flex items-center gap-1">
+                              <Upload size={11} /> Upload OUT Photo
+                            </button>
+                            <input ref={outRef} type="file" accept="image/jpeg,image/png" className="hidden"
+                              onChange={(e) => handlePhotoFile(e.target.files?.[0], 'out')} />
+                          </>
+                        )}
+                      </div>
                     </div>
 
-                    {/* OUT Photo */}
+                    {/* 4. Remarks */}
                     <div>
-                      <label className="label text-xs">OUT Photo</label>
-                      {outPhotoPreview ? (
-                        <div className="relative inline-block">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={outPhotoPreview} alt="OUT" className="w-16 h-16 object-cover rounded-lg border" />
-                          <button type="button" onClick={() => { setOutPhotoFile(null); setOutPhotoPreview(''); }}
-                            className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-500 text-white rounded-full flex items-center justify-center text-xs">×</button>
-                        </div>
-                      ) : (
-                        <>
-                          <button type="button" onClick={() => outRef.current?.click()}
-                            className="btn-secondary text-xs py-1 px-2 flex items-center gap-1">
-                            <Upload size={11} /> Upload
-                          </button>
-                          <input ref={outRef} type="file" accept="image/jpeg,image/png" className="hidden"
-                            onChange={(e) => handlePhotoFile(e.target.files?.[0], 'out')} />
-                        </>
-                      )}
-                    </div>
-
-                    <div>
-                      <label className="label text-xs">Remarks</label>
+                      <label className="label text-xs">4. Remarks</label>
                       <textarea className="input text-sm py-1.5 resize-none min-h-[60px]"
                         placeholder="Optional remarks…" value={form.remarks} maxLength={300}
                         onChange={(e) => setForm((f) => ({ ...f, remarks: e.target.value }))} />
                     </div>
 
                     <button type="submit" className="btn-primary w-full text-sm py-2" disabled={submitting}>
-                      {submitting ? <Spinner size={16} /> : 'Submit Attendance'}
+                      {submitting ? <Spinner size={16} /> : (editMode ? 'Update Attendance' : 'Submit Attendance')}
                     </button>
                   </form>
                 )}
@@ -463,19 +489,18 @@ export function EmployeeCalendarModal({ employee, onClose, onAttendanceAdded }: 
             )}
 
             {/* Recent Attendance */}
-            {recentRecords.length > 0 && (
+            {recentRecords.length > 0 && !showForm && (
               <div>
                 <h3 className="text-sm font-semibold text-gray-700 mb-2">Recent Attendance</h3>
                 <div className="space-y-1.5">
                   {recentRecords.map((r) => (
                     <div key={r._id} className="flex items-center justify-between text-sm">
                       <span className="text-gray-500">
-                        {new Date(r.date + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        {new Date(r.date + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
                       </span>
                       <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
                         r.status === 'present' ? 'bg-green-50 text-green-700' :
-                        r.status === 'absent' ? 'bg-red-50 text-red-600' :
-                        'bg-orange-50 text-orange-600'
+                        r.status === 'absent' ? 'bg-red-50 text-red-600' : 'bg-orange-50 text-orange-600'
                       }`}>
                         {r.status === 'present' ? 'Present' : r.status === 'absent' ? 'Absent' : 'Half Day'}
                       </span>
