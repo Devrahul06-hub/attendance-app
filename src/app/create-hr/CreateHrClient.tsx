@@ -11,7 +11,6 @@ interface HR {
   email: string;
   employeeId?: string;
   designation?: string;
-  project?: string;
   phone?: string;
   status: 'active' | 'inactive';
   joinDate?: string;
@@ -20,7 +19,7 @@ interface HR {
 
 const emptyForm = {
   name: '', email: '', password: '', employeeId: '',
-  designation: '', project: '', phone: '', status: 'active', joinDate: '',
+  designation: '', phone: '', status: 'active', joinDate: '',
 };
 
 export function CreateHrClient() {
@@ -76,7 +75,6 @@ export function CreateHrClient() {
       password: '',
       employeeId: hr.employeeId || '',
       designation: hr.designation || '',
-      project: hr.project || '',
       phone: hr.phone || '',
       status: hr.status,
       joinDate: hr.joinDate || '',
@@ -156,11 +154,6 @@ export function CreateHrClient() {
               onChange={(e) => setForm({ ...form, designation: e.target.value })} />
           </div>
           <div>
-            <label className="label">Project / Department</label>
-            <input className="input" placeholder="e.g. Site A" value={form.project}
-              onChange={(e) => setForm({ ...form, project: e.target.value })} />
-          </div>
-          <div>
             <label className="label">Phone <span className="text-red-500">*</span></label>
             <input className="input" placeholder="e.g. 9876543210" value={form.phone}
               onChange={(e) => setForm({ ...form, phone: e.target.value.replace(/\D/g, '') })}
@@ -204,7 +197,6 @@ export function CreateHrClient() {
                   <th className="px-4 py-3 text-left">Emp ID</th>
                   <th className="px-4 py-3 text-left">Emp Name</th>
                   <th className="px-4 py-3 text-left">Designation</th>
-                  <th className="px-4 py-3 text-left">Project</th>
                   <th className="px-4 py-3 text-left">Phone</th>
                   <th className="px-4 py-3 text-left">Email</th>
                   <th className="px-4 py-3 text-left">Status</th>
@@ -219,7 +211,6 @@ export function CreateHrClient() {
                     <td className="px-4 py-3 font-medium text-blue-600">{hr.employeeId || <span className="text-gray-300">—</span>}</td>
                     <td className="px-4 py-3 font-medium">{hr.name}</td>
                     <td className="px-4 py-3 text-gray-600">{hr.designation || <span className="text-gray-300">—</span>}</td>
-                    <td className="px-4 py-3 text-gray-600">{hr.project || <span className="text-gray-300">—</span>}</td>
                     <td className="px-4 py-3 text-gray-600">{hr.phone || <span className="text-gray-300">—</span>}</td>
                     <td className="px-4 py-3 text-gray-600">{hr.email}</td>
                     <td className="px-4 py-3">
@@ -285,11 +276,6 @@ export function CreateHrClient() {
                 <label className="label">Designation</label>
                 <input className="input" value={editForm.designation}
                   onChange={(e) => setEditForm({ ...editForm, designation: e.target.value })} />
-              </div>
-              <div>
-                <label className="label">Project / Department</label>
-                <input className="input" value={editForm.project}
-                  onChange={(e) => setEditForm({ ...editForm, project: e.target.value })} />
               </div>
               <div>
                 <label className="label">Phone</label>

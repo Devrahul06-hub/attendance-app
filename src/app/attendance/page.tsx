@@ -9,7 +9,7 @@ export default function AttendancePage() {
 
   return (
     <AppShell user={session}>
-      <AttendanceClient />
+      <AttendanceClient role={session.role} />
     </AppShell>
   );
 }

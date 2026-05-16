@@ -15,21 +15,31 @@ interface Employee {
   taluka?: string;
   phone?: string;
   email?: string;
+  vendorName?: string;
   status: 'active' | 'inactive';
   joinDate?: string;
   addedByHrName: string;
   createdAt: string;
 }
 
+interface HrUser {
+  _id: string;
+  name: string;
+  email: string;
+}
+
 const emptyForm = {
   name: '', employeeId: '', designation: '', district: '', taluka: '',
-  phone: '', email: '', status: 'active', joinDate: '',
+  phone: '', email: '', vendorName: '', status: 'active', joinDate: '',
 };
 
-export function CreateEmployeeClient() {
+export function CreateEmployeeClient({ role }: { role: string }) {
+  const isAdmin = role === 'admin';
   const [form, setForm] = useState({ ...emptyForm });
+  const [assignToHrId, setAssignToHrId] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [hrUsers, setHrUsers] = useState<HrUser[]>([]);
   const [loadingList, setLoadingList] = useState(true);
 
   const [editTarget, setEditTarget] = useState<Employee | null>(null);
@@ -44,7 +54,14 @@ export function CreateEmployeeClient() {
     setLoadingList(false);
   }
 
-  useEffect(() => { loadEmployees(); }, []);
+  useEffect(() => {
+    loadEmployees();
+    if (isAdmin) {
+      fetch('/api/admin/users')
+        .then((r) => r.json())
+        .then((d) => setHrUsers((d.users || []).filter((u: any) => u.role === 'employee')));
+    }
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -53,12 +70,13 @@ export function CreateEmployeeClient() {
       const res = await fetch('/api/employees', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, ...(isAdmin && assignToHrId ? { assignToHrId } : {}) }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed');
       toast.success(`Employee ${form.name} created!`);
       setForm({ ...emptyForm });
+      setAssignToHrId('');
       await loadEmployees();
     } catch (err: any) {
       toast.error(err.message);
@@ -77,6 +95,7 @@ export function CreateEmployeeClient() {
       taluka: emp.taluka || '',
       phone: emp.phone || '',
       email: emp.email || '',
+      vendorName: emp.vendorName || '',
       status: emp.status,
       joinDate: emp.joinDate || '',
     });
@@ -140,6 +159,11 @@ export function CreateEmployeeClient() {
               onChange={(e) => setForm({ ...form, employeeId: e.target.value })} />
           </div>
           <div>
+            <label className="label">Vendor Name <span className="text-red-500">*</span></label>
+            <input className="input" placeholder="e.g. ABC Vendors" value={form.vendorName}
+              onChange={(e) => setForm({ ...form, vendorName: e.target.value })} required />
+          </div>
+          <div>
             <label className="label">Designation</label>
             <input className="input" placeholder="e.g. Site Supervisor" value={form.designation}
               onChange={(e) => setForm({ ...form, designation: e.target.value })} />
@@ -184,6 +208,17 @@ export function CreateEmployeeClient() {
             <input type="date" className="input" value={form.joinDate}
               onChange={(e) => setForm({ ...form, joinDate: e.target.value })} />
           </div>
+          {isAdmin && (
+            <div>
+              <label className="label">Assign to HR</label>
+              <select className="input" value={assignToHrId} onChange={(e) => setAssignToHrId(e.target.value)}>
+                <option value="">— Self (Admin) —</option>
+                {hrUsers.map((u) => (
+                  <option key={u._id} value={u._id}>{u.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
           <div className="sm:col-span-2 lg:col-span-3">
             <button type="submit" className="btn-primary" disabled={submitting}>
               {submitting ? <Spinner size={18} /> : 'Add Employee'}
@@ -209,6 +244,7 @@ export function CreateEmployeeClient() {
                   <th className="px-4 py-3 text-left">Sr No</th>
                   <th className="px-4 py-3 text-left">Emp ID</th>
                   <th className="px-4 py-3 text-left">Emp Name</th>
+                  <th className="px-4 py-3 text-left">Vendor Name</th>
                   <th className="px-4 py-3 text-left">Designation</th>
                   <th className="px-4 py-3 text-left">District</th>
                   <th className="px-4 py-3 text-left">Taluka</th>
@@ -225,6 +261,7 @@ export function CreateEmployeeClient() {
                     <td className="px-4 py-3 text-gray-500">{i + 1}</td>
                     <td className="px-4 py-3 font-medium text-blue-600">{emp.employeeId || <span className="text-gray-300">—</span>}</td>
                     <td className="px-4 py-3 font-medium">{emp.name}</td>
+                    <td className="px-4 py-3 text-gray-600">{emp.vendorName || <span className="text-gray-300">—</span>}</td>
                     <td className="px-4 py-3 text-gray-600">{emp.designation || <span className="text-gray-300">—</span>}</td>
                     <td className="px-4 py-3 text-gray-600">{emp.district || <span className="text-gray-300">—</span>}</td>
                     <td className="px-4 py-3 text-gray-600">{emp.taluka || <span className="text-gray-300">—</span>}</td>
@@ -283,6 +320,11 @@ export function CreateEmployeeClient() {
                 <label className="label">Employee ID</label>
                 <input className="input" value={editForm.employeeId}
                   onChange={(e) => setEditForm({ ...editForm, employeeId: e.target.value })} />
+              </div>
+              <div>
+                <label className="label">Vendor Name <span className="text-red-500">*</span></label>
+                <input className="input" value={editForm.vendorName} required
+                  onChange={(e) => setEditForm({ ...editForm, vendorName: e.target.value })} />
               </div>
               <div>
                 <label className="label">Designation</label>

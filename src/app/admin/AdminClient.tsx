@@ -18,15 +18,33 @@ interface HrUser {
 interface Record {
   _id: string;
   employeeName: string;
+  phone?: string;
   date: string;
-  time: string;
-  status: 'present' | 'absent';
+  inTime?: string;
+  outTime?: string;
+  status: 'present' | 'absent' | 'half-day';
   remarks?: string;
-  imageUrl?: string;
+  inPhoto?: string;
+  outPhoto?: string;
   markedByHrId: string;
   markedByHrName: string;
   markedByHrEmail: string;
 }
+interface EmpRecord {
+  _id: string;
+  name: string;
+  employeeId?: string;
+  designation?: string;
+  district?: string;
+  taluka?: string;
+  phone: string;
+  email?: string;
+  status: 'active' | 'inactive';
+  joinDate?: string;
+  addedByHrId: string;
+  addedByHrName: string;
+}
+
 interface Stats {
   totalUsers: number;
   presentToday: number;
@@ -36,18 +54,27 @@ interface Stats {
 }
 
 export function AdminClient() {
-  const [tab, setTab] = useState<'records' | 'users'>('records');
+  const [tab, setTab] = useState<'records' | 'users' | 'employees'>('records');
   const [stats, setStats] = useState<Stats | null>(null);
   const [users, setUsers] = useState<HrUser[]>([]);
   const [records, setRecords] = useState<Record[]>([]);
+  const [employees, setEmployees] = useState<EmpRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [empLoading, setEmpLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
 
-  // Filters
-  const [filterDate, setFilterDate] = useState('');
+  // Attendance filters
+  const [filterDate, setFilterDate] = useState(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  });
   const [filterHrId, setFilterHrId] = useState('');
-  const [filterStatus, setFilterStatus] = useState<'all' | 'present' | 'absent'>('all');
+  const [filterStatus, setFilterStatus] = useState<'all' | 'present' | 'absent' | 'half-day'>('all');
   const [search, setSearch] = useState('');
+
+  // Employee list filters
+  const [empFilterHrId, setEmpFilterHrId] = useState('');
+  const [empSearch, setEmpSearch] = useState('');
 
   async function fetchAll() {
     setLoading(true);
@@ -80,6 +107,26 @@ export function AdminClient() {
   function resetFilters() {
     setFilterDate(''); setFilterHrId(''); setFilterStatus('all'); setSearch('');
     setTimeout(fetchAll, 0);
+  }
+
+  async function fetchEmployees(hrId?: string) {
+    setEmpLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (hrId) params.set('hrId', hrId);
+      const res = await fetch(`/api/employees?${params.toString()}`).then((r) => r.json());
+      setEmployees(res.employees || []);
+    } catch {
+      toast.error('Failed to load employees');
+    } finally {
+      setEmpLoading(false);
+    }
+  }
+
+  function applyEmpFilter() { fetchEmployees(empFilterHrId); }
+  function resetEmpFilter() {
+    setEmpFilterHrId(''); setEmpSearch('');
+    setTimeout(() => fetchEmployees(), 0);
   }
 
   async function exportExcel(hrId?: string) {
@@ -134,15 +181,6 @@ export function AdminClient() {
         </button>
       </div>
 
-      {/* Stats */}
-      {stats && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard icon={<Users size={18} />} label="HR users" value={stats.totalUsers} color="brand" />
-          <StatCard icon={<CheckCircle2 size={18} />} label={`Present (${stats.todayDate})`} value={stats.presentToday} color="emerald" />
-          <StatCard icon={<XCircle size={18} />} label={`Absent (${stats.todayDate})`} value={stats.absentToday} color="red" />
-          <StatCard icon={<FileSpreadsheet size={18} />} label="Total records" value={stats.totalRecords} color="violet" />
-        </div>
-      )}
 
       {/* Tabs */}
       <div className="flex border-b border-[var(--border)]">
@@ -151,6 +189,9 @@ export function AdminClient() {
         </TabButton>
         <TabButton active={tab === 'users'} onClick={() => setTab('users')}>
           HR Users ({hrUsers.length})
+        </TabButton>
+        <TabButton active={tab === 'employees'} onClick={() => { setTab('employees'); if (!employees.length) fetchEmployees(); }}>
+          Employee List ({employees.length})
         </TabButton>
       </div>
 
@@ -172,6 +213,29 @@ export function AdminClient() {
                 />
               </div>
               <div>
+                <label className="label text-xs">Status</label>
+                <select
+                  className="input py-2 text-sm"
+                  value={filterStatus} onChange={(e) => setFilterStatus(e.target.value as any)}
+                >
+                  <option value="all">All Status</option>
+                  <option value="present">Present</option>
+                  <option value="half-day">Half Day</option>
+                  <option value="absent">Absent</option>
+                </select>
+              </div>
+              <div>
+                <label className="label text-xs">Search Employee</label>
+                <div className="relative">
+                  <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <input
+                    className="input pl-9 py-2 text-sm"
+                    placeholder="Employee name..."
+                    value={search} onChange={(e) => setSearch(e.target.value)}
+                  />
+                </div>
+              </div>
+              <div>
                 <label className="label text-xs">Filter by HR</label>
                 <select
                   className="input py-2 text-sm"
@@ -182,28 +246,6 @@ export function AdminClient() {
                     <option key={u._id} value={u._id}>{u.name}</option>
                   ))}
                 </select>
-              </div>
-              <div>
-                <label className="label text-xs">Status</label>
-                <select
-                  className="input py-2 text-sm"
-                  value={filterStatus} onChange={(e) => setFilterStatus(e.target.value as any)}
-                >
-                  <option value="all">All</option>
-                  <option value="present">Present</option>
-                  <option value="absent">Absent</option>
-                </select>
-              </div>
-              <div>
-                <label className="label text-xs">Search employee</label>
-                <div className="relative">
-                  <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                  <input
-                    className="input pl-9 py-2 text-sm"
-                    placeholder="Employee name..."
-                    value={search} onChange={(e) => setSearch(e.target.value)}
-                  />
-                </div>
               </div>
               <div className="flex items-end gap-2">
                 <button onClick={applyFilters} className="btn-primary py-2 text-sm flex-1">Apply</button>
@@ -224,36 +266,52 @@ export function AdminClient() {
                   <thead className="bg-gray-50 text-xs uppercase text-gray-500 tracking-wider">
                     <tr>
                       <th className="px-5 py-3 text-left">Employee</th>
+                      <th className="px-5 py-3 text-left">Phone</th>
                       <th className="px-5 py-3 text-left">Marked by (HR)</th>
                       <th className="px-5 py-3 text-left">Date</th>
-                      <th className="px-5 py-3 text-left">Time</th>
+                      <th className="px-5 py-3 text-left">IN Time</th>
+                      <th className="px-5 py-3 text-left">OUT Time</th>
                       <th className="px-5 py-3 text-left">Status</th>
                       <th className="px-5 py-3 text-left">Remarks</th>
-                      <th className="px-5 py-3 text-left">Photo</th>
+                      <th className="px-5 py-3 text-left">IN Photo</th>
+                      <th className="px-5 py-3 text-left">OUT Photo</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[var(--border)]">
                     {records.map((r) => (
                       <tr key={r._id} className="hover:bg-gray-50/50">
                         <td className="px-5 py-3 font-medium">{r.employeeName}</td>
+                        <td className="px-5 py-3 text-gray-600">{r.phone || <span className="text-gray-300">—</span>}</td>
                         <td className="px-5 py-3">
                           <div className="font-medium">{r.markedByHrName}</div>
                           <div className="text-xs text-gray-500">{r.markedByHrEmail}</div>
                         </td>
-                        <td className="px-5 py-3 font-medium">{r.date}</td>
-                        <td className="px-5 py-3 text-gray-600">{r.time}</td>
+                        <td className="px-5 py-3 font-medium whitespace-nowrap">{r.date}</td>
+                        <td className="px-5 py-3 text-gray-600 whitespace-nowrap">{r.inTime || <span className="text-gray-300">—</span>}</td>
+                        <td className="px-5 py-3 text-gray-600 whitespace-nowrap">{r.outTime || <span className="text-gray-300">—</span>}</td>
                         <td className="px-5 py-3">
-                          <span className={r.status === 'present' ? 'badge-present' : 'badge-absent'}>
-                            {r.status}
+                          <span className={
+                            r.status === 'present' ? 'badge-present' :
+                            r.status === 'absent' ? 'badge-absent' : 'badge-halfday'
+                          }>
+                            {r.status === 'half-day' ? 'Half Day' : r.status.charAt(0).toUpperCase() + r.status.slice(1)}
                           </span>
                         </td>
                         <td className="px-5 py-3 text-gray-600 max-w-xs truncate">
                           {r.remarks || <span className="text-gray-300">—</span>}
                         </td>
                         <td className="px-5 py-3">
-                          {r.imageUrl ? (
-                            <a href={r.imageUrl} target="_blank" rel="noopener noreferrer"
-                              className="text-brand-600 hover:underline inline-flex items-center gap-1">
+                          {r.inPhoto ? (
+                            <a href={r.inPhoto} target="_blank" rel="noopener noreferrer"
+                              className="text-blue-600 hover:underline inline-flex items-center gap-1">
+                              <ImageIcon size={14} /> View
+                            </a>
+                          ) : <span className="text-gray-300">—</span>}
+                        </td>
+                        <td className="px-5 py-3">
+                          {r.outPhoto ? (
+                            <a href={r.outPhoto} target="_blank" rel="noopener noreferrer"
+                              className="text-blue-600 hover:underline inline-flex items-center gap-1">
                               <ImageIcon size={14} /> View
                             </a>
                           ) : <span className="text-gray-300">—</span>}
@@ -264,6 +322,106 @@ export function AdminClient() {
                 </table>
               </div>
             )}
+          </div>
+        </>
+      )}
+
+      {/* Employee List tab */}
+      {tab === 'employees' && (
+        <>
+          <div className="card p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Filter size={16} className="text-gray-500" />
+              <span className="text-sm font-medium">Filters</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label className="label text-xs">Filter by HR</label>
+                <select
+                  className="input py-2 text-sm"
+                  value={empFilterHrId} onChange={(e) => setEmpFilterHrId(e.target.value)}
+                >
+                  <option value="">All HR</option>
+                  {hrUsers.map((u) => (
+                    <option key={u._id} value={u._id}>{u.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="label text-xs">Search Employee</label>
+                <div className="relative">
+                  <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <input
+                    className="input pl-9 py-2 text-sm"
+                    placeholder="Name, phone or ID..."
+                    value={empSearch} onChange={(e) => setEmpSearch(e.target.value)}
+                  />
+                </div>
+              </div>
+              <div className="flex items-end gap-2">
+                <button onClick={applyEmpFilter} className="btn-primary py-2 text-sm flex-1">Apply</button>
+                <button onClick={resetEmpFilter} className="btn-secondary py-2 text-sm">Reset</button>
+              </div>
+            </div>
+          </div>
+
+          <div className="card overflow-hidden">
+            {empLoading ? (
+              <div className="py-20 flex justify-center"><Spinner size={32} /></div>
+            ) : (() => {
+              const filtered = employees.filter((e) =>
+                !empSearch ||
+                e.name.toLowerCase().includes(empSearch.toLowerCase()) ||
+                (e.phone || '').includes(empSearch) ||
+                (e.employeeId || '').toLowerCase().includes(empSearch.toLowerCase())
+              );
+              return filtered.length === 0 ? (
+                <div className="p-10 text-center text-gray-500 text-sm">No employees found.</div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-50 text-xs uppercase text-gray-500 tracking-wider">
+                      <tr>
+                        <th className="px-5 py-3 text-left">Sr No</th>
+                        <th className="px-5 py-3 text-left">Emp ID</th>
+                        <th className="px-5 py-3 text-left">Name</th>
+                        <th className="px-5 py-3 text-left">Designation</th>
+                        <th className="px-5 py-3 text-left">District</th>
+                        <th className="px-5 py-3 text-left">Taluka</th>
+                        <th className="px-5 py-3 text-left">Phone</th>
+                        <th className="px-5 py-3 text-left">Email</th>
+                        <th className="px-5 py-3 text-left">Status</th>
+                        <th className="px-5 py-3 text-left">Added by (HR)</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[var(--border)]">
+                      {filtered.map((e, i) => (
+                        <tr key={e._id} className="hover:bg-gray-50/50">
+                          <td className="px-5 py-3 text-gray-500">{i + 1}</td>
+                          <td className="px-5 py-3 font-medium text-blue-600">{e.employeeId || <span className="text-gray-300">—</span>}</td>
+                          <td className="px-5 py-3 font-medium">{e.name}</td>
+                          <td className="px-5 py-3 text-gray-600">{e.designation || <span className="text-gray-300">—</span>}</td>
+                          <td className="px-5 py-3 text-gray-600">{e.district || <span className="text-gray-300">—</span>}</td>
+                          <td className="px-5 py-3 text-gray-600">{e.taluka || <span className="text-gray-300">—</span>}</td>
+                          <td className="px-5 py-3 text-gray-600">{e.phone}</td>
+                          <td className="px-5 py-3 text-gray-600">{e.email || <span className="text-gray-300">—</span>}</td>
+                          <td className="px-5 py-3">
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${
+                              e.status === 'active'
+                                ? 'bg-green-50 text-green-700 border-green-200'
+                                : 'bg-red-50 text-red-600 border-red-200'
+                            }`}>
+                              {e.status === 'active' ? 'Active' : 'Inactive'}
+                            </span>
+                          </td>
+                          <td className="px-5 py-3 text-gray-600">{e.addedByHrName || <span className="text-gray-300">—</span>}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              );
+            })()}
           </div>
         </>
       )}

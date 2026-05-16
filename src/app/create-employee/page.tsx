@@ -9,7 +9,7 @@ export default function CreateEmployeePage() {
 
   return (
     <AppShell user={session}>
-      <CreateEmployeeClient />
+      <CreateEmployeeClient role={session.role} />
     </AppShell>
   );
 }

@@ -8,6 +8,7 @@ export interface IEmployee extends Document {
   taluka?: string;
   phone?: string;
   email?: string;
+  vendorName: string;
   status: 'active' | 'inactive';
   joinDate?: string;
   addedByHrId: string;
@@ -24,6 +25,7 @@ const EmployeeSchema = new Schema<IEmployee>(
     taluka: { type: String, trim: true },
     phone: { type: String, trim: true },
     email: { type: String, trim: true, lowercase: true },
+    vendorName: { type: String, required: true, trim: true },
     status: { type: String, enum: ['active', 'inactive'], default: 'active' },
     joinDate: { type: String, trim: true },
     addedByHrId: { type: String, required: true },
