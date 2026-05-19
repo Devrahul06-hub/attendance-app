@@ -7,7 +7,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   const session = getSession();
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { name, employeeId, designation, district, taluka, phone, email, vendorName, status, joinDate } = await req.json();
+  const { name, employeeId, designation, district, assembly, phone, email, vendorName, salary, status, joinDate } = await req.json();
 
   await dbConnect();
 
@@ -24,10 +24,11 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       employeeId: trimmedId ?? null,
       designation: designation?.trim() || '',
       district: district?.trim() || '',
-      taluka: taluka?.trim() || '',
+      assembly: assembly?.trim() || '',
       phone: phone?.trim() || '',
       email: email?.toLowerCase().trim() || '',
       vendorName: vendorName?.trim() || '',
+      salary: salary?.trim() || '',
       status: status || 'active',
       joinDate: joinDate || '',
     },

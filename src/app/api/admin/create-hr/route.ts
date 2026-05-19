@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   if (session.role !== 'admin') return NextResponse.json({ error: 'Admins only' }, { status: 403 });
 
-  const { name, email, password, employeeId, designation, project, phone, status, joinDate } = await req.json();
+  const { name, email, password, employeeId, designation, phone, salary, status, joinDate } = await req.json();
 
   if (!name?.trim() || !email?.trim() || !password) {
     return NextResponse.json({ error: 'Name, email and password are required' }, { status: 400 });
@@ -34,8 +34,8 @@ export async function POST(req: NextRequest) {
     role: 'employee',
     employeeId: employeeId?.trim() || '',
     designation: designation?.trim() || '',
-    project: project?.trim() || '',
     phone: phone?.trim() || '',
+    salary: salary?.trim() || '',
     status: status || 'active',
     joinDate: joinDate || '',
   });

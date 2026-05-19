@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
 
   if (!employeeName?.trim()) return NextResponse.json({ error: 'Employee name is required' }, { status: 400 });
   if (!phone?.trim()) return NextResponse.json({ error: 'Mobile number is required' }, { status: 400 });
-  if (!['present', 'absent', 'half-day'].includes(status)) return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
+  if (!['present', 'absent', 'half-day', 'not-selected', 'paid-leave'].includes(status)) return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
 
   const attendanceDate = date || todayDateString();
 

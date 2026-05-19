@@ -17,10 +17,12 @@ interface Employee {
   status: 'active' | 'inactive';
 }
 
+type AttendanceStatus = 'not-selected' | 'present' | 'half-day' | 'absent' | 'paid-leave';
+
 interface AttendanceRecord {
   _id: string;
   date: string;
-  status: 'present' | 'absent' | 'half-day';
+  status: AttendanceStatus;
   inTime?: string;
   outTime?: string;
   inPhoto?: string;
@@ -52,9 +54,25 @@ function initials(name: string) {
 }
 
 const emptyForm = {
-  status: 'present' as 'present' | 'absent' | 'half-day',
+  status: 'not-selected' as AttendanceStatus,
   inTime: '', outTime: '', remarks: '', inPhoto: '', outPhoto: '',
 };
+
+function statusLabel(s: string) {
+  if (s === 'present') return 'Present';
+  if (s === 'absent') return 'Absent';
+  if (s === 'half-day') return 'Half Day';
+  if (s === 'paid-leave') return 'Paid Leave';
+  return 'Not Selected';
+}
+
+function statusBadgeClass(s: string) {
+  if (s === 'present') return 'bg-green-50 text-green-700 border-green-200';
+  if (s === 'absent') return 'bg-red-50 text-red-600 border-red-200';
+  if (s === 'half-day') return 'bg-orange-50 text-orange-600 border-orange-200';
+  if (s === 'paid-leave') return 'bg-purple-50 text-purple-700 border-purple-200';
+  return 'bg-gray-50 text-gray-500 border-gray-200';
+}
 
 interface Props {
   employee: Employee;
@@ -153,6 +171,7 @@ export function EmployeeCalendarModal({ employee, onClose, onAttendanceAdded }: 
   const present = records.filter((r) => r.status === 'present').length;
   const absent = records.filter((r) => r.status === 'absent').length;
   const halfDay = records.filter((r) => r.status === 'half-day').length;
+  const paidLeave = records.filter((r) => r.status === 'paid-leave').length;
 
   function handlePhotoFile(file: File | undefined, type: 'in' | 'out') {
     if (!file) return;
@@ -215,8 +234,12 @@ export function EmployeeCalendarModal({ employee, onClose, onAttendanceAdded }: 
   function statusColor(status: string) {
     if (status === 'present') return 'bg-green-500';
     if (status === 'absent') return 'bg-red-500';
-    return 'bg-orange-400';
+    if (status === 'half-day') return 'bg-orange-400';
+    if (status === 'paid-leave') return 'bg-purple-400';
+    return 'bg-gray-300';
   }
+
+  const disableFields = form.status === 'absent' || form.status === 'paid-leave';
 
   const recentRecords = [...records].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5);
   const showForm = editMode || !selectedRecord;
@@ -312,6 +335,7 @@ export function EmployeeCalendarModal({ employee, onClose, onAttendanceAdded }: 
                   { label: 'Present', count: present, color: 'text-green-600', bg: 'bg-green-50 border-green-100' },
                   { label: 'Absent', count: absent, color: 'text-red-500', bg: 'bg-red-50 border-red-100' },
                   { label: 'Half Day', count: halfDay, color: 'text-orange-500', bg: 'bg-orange-50 border-orange-100' },
+                  { label: 'Paid Leave', count: paidLeave, color: 'text-purple-600', bg: 'bg-purple-50 border-purple-100' },
                   { label: 'Total', count: records.length, color: 'text-blue-600', bg: 'bg-blue-50 border-blue-100' },
                 ].map(({ label, count, color, bg }) => (
                   <div key={label} className={`rounded-xl border p-2.5 text-center ${bg}`}>
@@ -329,11 +353,16 @@ export function EmployeeCalendarModal({ employee, onClose, onAttendanceAdded }: 
                   <h3 className="text-sm font-semibold text-gray-700">
                     {new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', weekday: 'short' })}
                   </h3>
-                  {selectedRecord && !editMode && (
+                  {selectedRecord && !editMode && selectedRecord.status !== 'absent' && (
                     <button onClick={() => openEditForm(selectedRecord)}
                       className="flex items-center gap-1 text-xs text-blue-600 hover:bg-blue-50 px-2 py-1 rounded-lg transition-colors">
                       <Pencil size={12} /> Edit
                     </button>
+                  )}
+                  {selectedRecord && !editMode && selectedRecord.status === 'absent' && (
+                    <span className="text-xs text-red-400 bg-red-50 border border-red-100 px-2 py-1 rounded-lg">
+                      Locked
+                    </span>
                   )}
                   {editMode && (
                     <button onClick={() => setEditMode(false)}
@@ -346,12 +375,8 @@ export function EmployeeCalendarModal({ employee, onClose, onAttendanceAdded }: 
                 {/* View mode */}
                 {selectedRecord && !editMode ? (
                   <div className="space-y-3">
-                    <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${
-                      selectedRecord.status === 'present' ? 'bg-green-50 text-green-700 border-green-200' :
-                      selectedRecord.status === 'absent' ? 'bg-red-50 text-red-600 border-red-200' :
-                      'bg-orange-50 text-orange-600 border-orange-200'
-                    }`}>
-                      {selectedRecord.status === 'present' ? 'Present' : selectedRecord.status === 'absent' ? 'Absent' : 'Half Day'}
+                    <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${statusBadgeClass(selectedRecord.status)}`}>
+                      {statusLabel(selectedRecord.status)}
                     </div>
 
                     {/* IN section */}
@@ -403,18 +428,23 @@ export function EmployeeCalendarModal({ employee, onClose, onAttendanceAdded }: 
                     <div>
                       <label className="label text-xs">1. Status <span className="text-red-500">*</span></label>
                       <select className="input py-1.5 text-sm" value={form.status}
-                        onChange={(e) => setForm((f) => ({ ...f, status: e.target.value as any }))}>
+                        onChange={(e) => setForm((f) => ({ ...f, status: e.target.value as AttendanceStatus }))}>
+                        <option value="not-selected">Not Selected</option>
                         <option value="present">Present</option>
                         <option value="half-day">Half Day</option>
                         <option value="absent">Absent</option>
+                        <option value="paid-leave">Paid Leave</option>
                       </select>
+                      {disableFields && (
+                        <p className="text-xs text-gray-400 mt-1">IN/OUT fields disabled for {statusLabel(form.status)}.</p>
+                      )}
                     </div>
 
                     {/* 2. IN Time + IN Photo */}
-                    <div className="space-y-2">
+                    <div className={`space-y-2 ${disableFields ? 'opacity-40 pointer-events-none' : ''}`}>
                       <div>
                         <label className="label text-xs">2. IN Time</label>
-                        <input type="time" className="input py-1.5 text-sm" value={form.inTime}
+                        <input type="time" className="input py-1.5 text-sm" value={form.inTime} disabled={disableFields}
                           onChange={(e) => setForm((f) => ({ ...f, inTime: e.target.value }))} />
                       </div>
                       <div>
@@ -442,10 +472,10 @@ export function EmployeeCalendarModal({ employee, onClose, onAttendanceAdded }: 
                     </div>
 
                     {/* 3. OUT Time + OUT Photo */}
-                    <div className="space-y-2">
+                    <div className={`space-y-2 ${disableFields ? 'opacity-40 pointer-events-none' : ''}`}>
                       <div>
                         <label className="label text-xs">3. OUT Time</label>
-                        <input type="time" className="input py-1.5 text-sm" value={form.outTime}
+                        <input type="time" className="input py-1.5 text-sm" value={form.outTime} disabled={disableFields}
                           onChange={(e) => setForm((f) => ({ ...f, outTime: e.target.value }))} />
                       </div>
                       <div>
@@ -473,10 +503,10 @@ export function EmployeeCalendarModal({ employee, onClose, onAttendanceAdded }: 
                     </div>
 
                     {/* 4. Remarks */}
-                    <div>
+                    <div className={disableFields ? 'opacity-40 pointer-events-none' : ''}>
                       <label className="label text-xs">4. Remarks</label>
                       <textarea className="input text-sm py-1.5 resize-none min-h-[60px]"
-                        placeholder="Optional remarks…" value={form.remarks} maxLength={300}
+                        placeholder="Optional remarks…" value={form.remarks} maxLength={300} disabled={disableFields}
                         onChange={(e) => setForm((f) => ({ ...f, remarks: e.target.value }))} />
                     </div>
 
@@ -498,11 +528,8 @@ export function EmployeeCalendarModal({ employee, onClose, onAttendanceAdded }: 
                       <span className="text-gray-500">
                         {new Date(r.date + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
                       </span>
-                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                        r.status === 'present' ? 'bg-green-50 text-green-700' :
-                        r.status === 'absent' ? 'bg-red-50 text-red-600' : 'bg-orange-50 text-orange-600'
-                      }`}>
-                        {r.status === 'present' ? 'Present' : r.status === 'absent' ? 'Absent' : 'Half Day'}
+                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${statusBadgeClass(r.status)}`}>
+                        {statusLabel(r.status)}
                       </span>
                     </div>
                   ))}

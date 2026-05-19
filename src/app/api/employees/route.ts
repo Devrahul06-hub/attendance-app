@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
   const session = getSession();
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { name, employeeId, designation, district, taluka, phone, email, vendorName, status, joinDate, assignToHrId } = await req.json();
+  const { name, employeeId, designation, district, assembly, phone, email, vendorName, salary, status, joinDate, assignToHrId } = await req.json();
 
   if (!name?.trim()) {
     return NextResponse.json({ error: 'Employee name is required' }, { status: 400 });
@@ -28,6 +28,9 @@ export async function POST(req: NextRequest) {
     if (existing) return NextResponse.json({ error: 'Employee ID already exists' }, { status: 409 });
   }
 
+  const dupPhone = await Employee.findOne({ phone: phone.trim() });
+  if (dupPhone) return NextResponse.json({ error: `Employee with phone ${phone.trim()} already exists` }, { status: 409 });
+
   let hrId = session.userId;
   let hrName = session.name;
 
@@ -43,10 +46,11 @@ export async function POST(req: NextRequest) {
     ...(trimmedId && { employeeId: trimmedId }),
     designation: designation?.trim() || '',
     district: district?.trim() || '',
-    taluka: taluka?.trim() || '',
+    assembly: assembly?.trim() || '',
     phone: phone?.trim() || '',
     email: email?.toLowerCase().trim() || '',
     vendorName: vendorName.trim(),
+    salary: salary?.trim() || '',
     status: status || 'active',
     joinDate: joinDate || '',
     addedByHrId: hrId,

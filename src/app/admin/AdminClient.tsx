@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import {
   Users, CheckCircle2, XCircle, FileSpreadsheet, Download,
-  Search, ImageIcon, Filter,
+  Search, ImageIcon, Filter, Trash2,
 } from 'lucide-react';
 import { Spinner } from '@/components/Spinner';
 
@@ -22,7 +22,7 @@ interface Record {
   date: string;
   inTime?: string;
   outTime?: string;
-  status: 'present' | 'absent' | 'half-day';
+  status: 'not-selected' | 'present' | 'half-day' | 'absent' | 'paid-leave';
   remarks?: string;
   inPhoto?: string;
   outPhoto?: string;
@@ -36,7 +36,7 @@ interface EmpRecord {
   employeeId?: string;
   designation?: string;
   district?: string;
-  taluka?: string;
+  assembly?: string;
   phone: string;
   email?: string;
   status: 'active' | 'inactive';
@@ -69,7 +69,8 @@ export function AdminClient() {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   });
   const [filterHrId, setFilterHrId] = useState('');
-  const [filterStatus, setFilterStatus] = useState<'all' | 'present' | 'absent' | 'half-day'>('all');
+  const [filterStatus, setFilterStatus] = useState<'all' | 'not-selected' | 'present' | 'half-day' | 'absent' | 'paid-leave'>('all');
+  const [deletingEmpId, setDeletingEmpId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
 
   // Employee list filters
@@ -127,6 +128,20 @@ export function AdminClient() {
   function resetEmpFilter() {
     setEmpFilterHrId(''); setEmpSearch('');
     setTimeout(() => fetchEmployees(), 0);
+  }
+
+  async function deleteEmployee(id: string, name: string) {
+    if (!confirm(`Delete employee "${name}"? This cannot be undone.`)) return;
+    setDeletingEmpId(id);
+    try {
+      await fetch(`/api/employees/${id}`, { method: 'DELETE' });
+      toast.success('Employee deleted');
+      setEmployees((prev) => prev.filter((e) => e._id !== id));
+    } catch {
+      toast.error('Delete failed');
+    } finally {
+      setDeletingEmpId(null);
+    }
   }
 
   async function exportExcel(hrId?: string) {
@@ -219,9 +234,11 @@ export function AdminClient() {
                   value={filterStatus} onChange={(e) => setFilterStatus(e.target.value as any)}
                 >
                   <option value="all">All Status</option>
+                  <option value="not-selected">Not Selected</option>
                   <option value="present">Present</option>
                   <option value="half-day">Half Day</option>
                   <option value="absent">Absent</option>
+                  <option value="paid-leave">Paid Leave</option>
                 </select>
               </div>
               <div>
@@ -292,9 +309,12 @@ export function AdminClient() {
                         <td className="px-5 py-3">
                           <span className={
                             r.status === 'present' ? 'badge-present' :
-                            r.status === 'absent' ? 'badge-absent' : 'badge-halfday'
+                            r.status === 'absent' ? 'badge-absent' :
+                            r.status === 'half-day' ? 'badge-halfday' :
+                            r.status === 'paid-leave' ? 'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-50 text-purple-700 border border-purple-200' :
+                            'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-50 text-gray-500 border border-gray-200'
                           }>
-                            {r.status === 'half-day' ? 'Half Day' : r.status.charAt(0).toUpperCase() + r.status.slice(1)}
+                            {r.status === 'half-day' ? 'Half Day' : r.status === 'paid-leave' ? 'Paid Leave' : r.status === 'not-selected' ? 'Not Selected' : r.status.charAt(0).toUpperCase() + r.status.slice(1)}
                           </span>
                         </td>
                         <td className="px-5 py-3 text-gray-600 max-w-xs truncate">
@@ -387,11 +407,12 @@ export function AdminClient() {
                         <th className="px-5 py-3 text-left">Name</th>
                         <th className="px-5 py-3 text-left">Designation</th>
                         <th className="px-5 py-3 text-left">District</th>
-                        <th className="px-5 py-3 text-left">Taluka</th>
+                        <th className="px-5 py-3 text-left">Assembly</th>
                         <th className="px-5 py-3 text-left">Phone</th>
                         <th className="px-5 py-3 text-left">Email</th>
                         <th className="px-5 py-3 text-left">Status</th>
                         <th className="px-5 py-3 text-left">Added by (HR)</th>
+                        <th className="px-5 py-3 text-left">Action</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-[var(--border)]">
@@ -402,7 +423,7 @@ export function AdminClient() {
                           <td className="px-5 py-3 font-medium">{e.name}</td>
                           <td className="px-5 py-3 text-gray-600">{e.designation || <span className="text-gray-300">—</span>}</td>
                           <td className="px-5 py-3 text-gray-600">{e.district || <span className="text-gray-300">—</span>}</td>
-                          <td className="px-5 py-3 text-gray-600">{e.taluka || <span className="text-gray-300">—</span>}</td>
+                          <td className="px-5 py-3 text-gray-600">{e.assembly || <span className="text-gray-300">—</span>}</td>
                           <td className="px-5 py-3 text-gray-600">{e.phone}</td>
                           <td className="px-5 py-3 text-gray-600">{e.email || <span className="text-gray-300">—</span>}</td>
                           <td className="px-5 py-3">
@@ -415,6 +436,14 @@ export function AdminClient() {
                             </span>
                           </td>
                           <td className="px-5 py-3 text-gray-600">{e.addedByHrName || <span className="text-gray-300">—</span>}</td>
+                          <td className="px-5 py-3">
+                            <button
+                              onClick={() => deleteEmployee(e._id, e.name)}
+                              disabled={deletingEmpId === e._id}
+                              className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50">
+                              {deletingEmpId === e._id ? <Spinner size={15} /> : <Trash2 size={15} />}
+                            </button>
+                          </td>
                         </tr>
                       ))}
                     </tbody>

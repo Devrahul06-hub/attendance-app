@@ -5,10 +5,11 @@ export interface IEmployee extends Document {
   employeeId?: string;
   designation?: string;
   district?: string;
-  taluka?: string;
+  assembly?: string;
   phone?: string;
   email?: string;
   vendorName: string;
+  salary?: string;
   status: 'active' | 'inactive';
   joinDate?: string;
   addedByHrId: string;
@@ -22,10 +23,11 @@ const EmployeeSchema = new Schema<IEmployee>(
     employeeId: { type: String, trim: true, unique: true, sparse: true },
     designation: { type: String, trim: true },
     district: { type: String, trim: true },
-    taluka: { type: String, trim: true },
+    assembly: { type: String, trim: true },
     phone: { type: String, trim: true },
     email: { type: String, trim: true, lowercase: true },
     vendorName: { type: String, required: true, trim: true },
+    salary: { type: String, trim: true },
     status: { type: String, enum: ['active', 'inactive'], default: 'active' },
     joinDate: { type: String, trim: true },
     addedByHrId: { type: String, required: true },

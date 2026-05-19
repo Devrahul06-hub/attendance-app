@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { UserPlus, Search, FileSpreadsheet, Filter } from 'lucide-react';
+import { UserPlus, Search, FileSpreadsheet, Filter, Trash2 } from 'lucide-react';
 import { Spinner } from '@/components/Spinner';
 import { EmployeeCalendarModal } from '@/components/EmployeeCalendarModal';
 import toast from 'react-hot-toast';
@@ -10,11 +10,13 @@ interface Employee {
   _id: string;
   name: string;
   employeeId?: string;
+  vendorName?: string;
   designation?: string;
   district?: string;
-  taluka?: string;
+  assembly?: string;
   phone: string;
   email?: string;
+  salary?: string;
   status: 'active' | 'inactive';
   joinDate?: string;
 }
@@ -40,6 +42,7 @@ export function AttendanceClient({ role }: { role: string }) {
   const [calendarEmployee, setCalendarEmployee] = useState<Employee | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [exporting, setExporting] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   function fetchEmployees(hrId?: string) {
     setLoading(true);
@@ -122,6 +125,22 @@ export function AttendanceClient({ role }: { role: string }) {
       toast.error(err.message, { id: toastId });
     } finally {
       setExporting(false);
+    }
+  }
+
+  async function handleDelete(id: string, name: string) {
+    if (!confirm(`Delete employee "${name}"? This cannot be undone.`)) return;
+    setDeletingId(id);
+    try {
+      const res = await fetch(`/api/employees/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Delete failed');
+      toast.success('Employee deleted');
+      setEmployees((prev) => prev.filter((e) => e._id !== id));
+      setSelected((prev) => { const next = new Set(prev); next.delete(id); return next; });
+    } catch {
+      toast.error('Delete failed');
+    } finally {
+      setDeletingId(null);
     }
   }
 
@@ -215,14 +234,17 @@ export function AttendanceClient({ role }: { role: string }) {
                   </th>
                   <th className="px-4 py-3 text-left">Sr No</th>
                   <th className="px-4 py-3 text-left">Emp ID</th>
-                  <th className="px-4 py-3 text-left">Name</th>
+                  <th className="px-4 py-3 text-left">Emp Name</th>
+                  <th className="px-4 py-3 text-left">Vendor Name</th>
                   <th className="px-4 py-3 text-left">Designation</th>
                   <th className="px-4 py-3 text-left">District</th>
-                  <th className="px-4 py-3 text-left">Taluka</th>
+                  <th className="px-4 py-3 text-left">Assembly</th>
                   <th className="px-4 py-3 text-left">Phone</th>
                   <th className="px-4 py-3 text-left">Email</th>
+                  <th className="px-4 py-3 text-left">Salary</th>
                   <th className="px-4 py-3 text-left">Status</th>
                   <th className="px-4 py-3 text-left">Join Date</th>
+                  <th className="px-4 py-3 text-left">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--border)]">
@@ -244,11 +266,13 @@ export function AttendanceClient({ role }: { role: string }) {
                       <button onClick={() => setCalendarEmployee(emp)}
                         className="text-blue-600 hover:underline text-left">{emp.name}</button>
                     </td>
+                    <td className="px-4 py-3 text-gray-600">{emp.vendorName || <span className="text-gray-300">—</span>}</td>
                     <td className="px-4 py-3 text-gray-600">{emp.designation || <span className="text-gray-300">—</span>}</td>
                     <td className="px-4 py-3 text-gray-600">{emp.district || <span className="text-gray-300">—</span>}</td>
-                    <td className="px-4 py-3 text-gray-600">{emp.taluka || <span className="text-gray-300">—</span>}</td>
+                    <td className="px-4 py-3 text-gray-600">{emp.assembly || <span className="text-gray-300">—</span>}</td>
                     <td className="px-4 py-3 text-gray-600">{emp.phone}</td>
                     <td className="px-4 py-3 text-gray-600">{emp.email || <span className="text-gray-300">—</span>}</td>
+                    <td className="px-4 py-3 text-gray-600">{emp.salary || <span className="text-gray-300">—</span>}</td>
                     <td className="px-4 py-3">
                       <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${
                         emp.status === 'active'
@@ -260,6 +284,14 @@ export function AttendanceClient({ role }: { role: string }) {
                     </td>
                     <td className="px-4 py-3 text-gray-600">
                       {emp.joinDate ? new Date(emp.joinDate).toLocaleDateString('en-IN') : <span className="text-gray-300">—</span>}
+                    </td>
+                    <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        onClick={() => handleDelete(emp._id, emp.name)}
+                        disabled={deletingId === emp._id}
+                        className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50">
+                        {deletingId === emp._id ? <Spinner size={15} /> : <Trash2 size={15} />}
+                      </button>
                     </td>
                   </tr>
                 ))}

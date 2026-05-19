@@ -8,7 +8,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   if (session.role !== 'admin') return NextResponse.json({ error: 'Admins only' }, { status: 403 });
 
-  const { name, employeeId, designation, project, phone, email, status, joinDate } = await req.json();
+  const { name, employeeId, designation, phone, email, salary, status, joinDate } = await req.json();
 
   await dbConnect();
 
@@ -18,8 +18,8 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       name: name?.trim(),
       employeeId: employeeId?.trim() || '',
       designation: designation?.trim() || '',
-      project: project?.trim() || '',
       phone: phone?.trim() || '',
+      salary: salary?.trim() || '',
       email: email?.toLowerCase().trim(),
       status: status || 'active',
       joinDate: joinDate || '',

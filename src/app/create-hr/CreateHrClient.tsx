@@ -12,6 +12,7 @@ interface HR {
   employeeId?: string;
   designation?: string;
   phone?: string;
+  salary?: string;
   status: 'active' | 'inactive';
   joinDate?: string;
   createdAt: string;
@@ -19,7 +20,7 @@ interface HR {
 
 const emptyForm = {
   name: '', email: '', password: '', employeeId: '',
-  designation: '', phone: '', status: 'active', joinDate: '',
+  designation: '', phone: '', salary: '', status: 'active', joinDate: '',
 };
 
 export function CreateHrClient() {
@@ -76,6 +77,7 @@ export function CreateHrClient() {
       employeeId: hr.employeeId || '',
       designation: hr.designation || '',
       phone: hr.phone || '',
+      salary: hr.salary || '',
       status: hr.status,
       joinDate: hr.joinDate || '',
     });
@@ -160,6 +162,11 @@ export function CreateHrClient() {
               maxLength={10} required />
           </div>
           <div>
+            <label className="label">Salary</label>
+            <input className="input" placeholder="e.g. 25000" value={form.salary}
+              onChange={(e) => setForm({ ...form, salary: e.target.value })} />
+          </div>
+          <div>
             <label className="label">Status</label>
             <select className="input" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
               <option value="active">Active</option>
@@ -198,6 +205,7 @@ export function CreateHrClient() {
                   <th className="px-4 py-3 text-left">Emp Name</th>
                   <th className="px-4 py-3 text-left">Designation</th>
                   <th className="px-4 py-3 text-left">Phone</th>
+                  <th className="px-4 py-3 text-left">Salary</th>
                   <th className="px-4 py-3 text-left">Email</th>
                   <th className="px-4 py-3 text-left">Status</th>
                   <th className="px-4 py-3 text-left">Join Date</th>
@@ -212,6 +220,7 @@ export function CreateHrClient() {
                     <td className="px-4 py-3 font-medium">{hr.name}</td>
                     <td className="px-4 py-3 text-gray-600">{hr.designation || <span className="text-gray-300">—</span>}</td>
                     <td className="px-4 py-3 text-gray-600">{hr.phone || <span className="text-gray-300">—</span>}</td>
+                    <td className="px-4 py-3 text-gray-600">{hr.salary || <span className="text-gray-300">—</span>}</td>
                     <td className="px-4 py-3 text-gray-600">{hr.email}</td>
                     <td className="px-4 py-3">
                       <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${
@@ -281,6 +290,11 @@ export function CreateHrClient() {
                 <label className="label">Phone</label>
                 <input className="input" value={editForm.phone}
                   onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })} />
+              </div>
+              <div>
+                <label className="label">Salary</label>
+                <input className="input" value={editForm.salary}
+                  onChange={(e) => setEditForm({ ...editForm, salary: e.target.value })} />
               </div>
               <div>
                 <label className="label">Status</label>

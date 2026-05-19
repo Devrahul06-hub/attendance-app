@@ -9,6 +9,7 @@ export interface IUser extends Document {
   designation?: string;
   project?: string;
   phone?: string;
+  salary?: string;
   status: 'active' | 'inactive';
   joinDate?: string;
   createdAt: Date;
@@ -35,6 +36,7 @@ const UserSchema = new Schema<IUser>(
     designation: { type: String, trim: true },
     project: { type: String, trim: true },
     phone: { type: String, trim: true },
+    salary: { type: String, trim: true },
     status: { type: String, enum: ['active', 'inactive'], default: 'active' },
     joinDate: { type: String, trim: true },
   },

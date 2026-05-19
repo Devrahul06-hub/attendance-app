@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
   const query: any = {};
   if (date) query.date = date;
   if (hrId) query.markedByHrId = hrId;
-  if (status && ['present', 'absent'].includes(status)) query.status = status;
+  if (status && ['present', 'absent', 'half-day', 'paid-leave', 'not-selected'].includes(status)) query.status = status;
   if (search) query.employeeName = { $regex: search, $options: 'i' };
 
   await dbConnect();

@@ -7,7 +7,7 @@ export interface IAttendance extends Document {
   date: string;
   inTime?: string;
   outTime?: string;
-  status: 'present' | 'absent' | 'half-day';
+  status: 'not-selected' | 'present' | 'half-day' | 'absent' | 'paid-leave';
   remarks: string;
   inPhoto?: string;
   outPhoto?: string;
@@ -25,7 +25,7 @@ const AttendanceSchema = new Schema<IAttendance>(
     date: { type: String, required: true, index: true },
     inTime: { type: String },
     outTime: { type: String },
-    status: { type: String, enum: ['present', 'absent', 'half-day'], required: true },
+    status: { type: String, enum: ['not-selected', 'present', 'half-day', 'absent', 'paid-leave'], required: true },
     remarks: { type: String, default: '' },
     inPhoto: { type: String },
     outPhoto: { type: String },

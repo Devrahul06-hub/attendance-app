@@ -11,13 +11,17 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
   if (!employeeName?.trim()) return NextResponse.json({ error: 'Employee name is required' }, { status: 400 });
   if (!phone?.trim()) return NextResponse.json({ error: 'Mobile number is required' }, { status: 400 });
-  if (!['present', 'absent', 'half-day'].includes(status)) return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
+  if (!['present', 'absent', 'half-day', 'not-selected', 'paid-leave'].includes(status)) return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
 
   await dbConnect();
 
   const filter = session.role === 'admin'
     ? { _id: params.id }
     : { _id: params.id, markedByHrId: session.userId };
+
+  const existing = await Attendance.findOne(filter);
+  if (!existing) return NextResponse.json({ error: 'Record not found' }, { status: 404 });
+  if (existing.status === 'absent') return NextResponse.json({ error: 'Absent records cannot be edited' }, { status: 403 });
 
   const record = await Attendance.findOneAndUpdate(
     filter,

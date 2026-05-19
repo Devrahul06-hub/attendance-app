@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { UserPlus, Pencil, Trash2, X } from 'lucide-react';
 import { Spinner } from '@/components/Spinner';
-import { maharashtraData, districts } from '@/data/maharashtra';
+import { assemblyData, assemblyDistricts } from '@/data/assembly';
 
 interface Employee {
   _id: string;
@@ -12,10 +12,11 @@ interface Employee {
   employeeId?: string;
   designation?: string;
   district?: string;
-  taluka?: string;
+  assembly?: string;
   phone?: string;
   email?: string;
   vendorName?: string;
+  salary?: string;
   status: 'active' | 'inactive';
   joinDate?: string;
   addedByHrName: string;
@@ -29,8 +30,8 @@ interface HrUser {
 }
 
 const emptyForm = {
-  name: '', employeeId: '', designation: '', district: '', taluka: '',
-  phone: '', email: '', vendorName: '', status: 'active', joinDate: '',
+  name: '', employeeId: '', designation: '', district: '', assembly: '',
+  phone: '', email: '', vendorName: '', salary: '', status: 'active', joinDate: '',
 };
 
 export function CreateEmployeeClient({ role }: { role: string }) {
@@ -92,10 +93,11 @@ export function CreateEmployeeClient({ role }: { role: string }) {
       employeeId: emp.employeeId || '',
       designation: emp.designation || '',
       district: emp.district || '',
-      taluka: emp.taluka || '',
+      assembly: emp.assembly || '',
       phone: emp.phone || '',
       email: emp.email || '',
       vendorName: emp.vendorName || '',
+      salary: emp.salary || '',
       status: emp.status,
       joinDate: emp.joinDate || '',
     });
@@ -171,18 +173,18 @@ export function CreateEmployeeClient({ role }: { role: string }) {
           <div>
             <label className="label">District</label>
             <select className="input" value={form.district}
-              onChange={(e) => setForm({ ...form, district: e.target.value, taluka: '' })}>
+              onChange={(e) => setForm({ ...form, district: e.target.value, assembly: '' })}>
               <option value="">Select District</option>
-              {districts.map((d) => <option key={d} value={d}>{d}</option>)}
+              {assemblyDistricts.map((d) => <option key={d} value={d}>{d}</option>)}
             </select>
           </div>
           <div>
-            <label className="label">Taluka</label>
-            <select className="input" value={form.taluka}
-              onChange={(e) => setForm({ ...form, taluka: e.target.value })}
+            <label className="label">Assembly</label>
+            <select className="input" value={form.assembly}
+              onChange={(e) => setForm({ ...form, assembly: e.target.value })}
               disabled={!form.district}>
-              <option value="">{form.district ? 'Select Taluka' : 'Select District first'}</option>
-              {(maharashtraData[form.district] || []).map((t) => <option key={t} value={t}>{t}</option>)}
+              <option value="">{form.district ? 'Select Assembly' : 'Select District first'}</option>
+              {(assemblyData[form.district] || []).map((a) => <option key={a} value={a}>{a}</option>)}
             </select>
           </div>
           <div>
@@ -195,6 +197,11 @@ export function CreateEmployeeClient({ role }: { role: string }) {
             <label className="label">Email</label>
             <input type="email" className="input" placeholder="e.g. rohit@company.com" value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })} />
+          </div>
+          <div>
+            <label className="label">Salary</label>
+            <input className="input" placeholder="e.g. 15000" value={form.salary}
+              onChange={(e) => setForm({ ...form, salary: e.target.value })} />
           </div>
           <div>
             <label className="label">Status</label>
@@ -247,9 +254,10 @@ export function CreateEmployeeClient({ role }: { role: string }) {
                   <th className="px-4 py-3 text-left">Vendor Name</th>
                   <th className="px-4 py-3 text-left">Designation</th>
                   <th className="px-4 py-3 text-left">District</th>
-                  <th className="px-4 py-3 text-left">Taluka</th>
+                  <th className="px-4 py-3 text-left">Assembly</th>
                   <th className="px-4 py-3 text-left">Phone</th>
                   <th className="px-4 py-3 text-left">Email</th>
+                  <th className="px-4 py-3 text-left">Salary</th>
                   <th className="px-4 py-3 text-left">Status</th>
                   <th className="px-4 py-3 text-left">Join Date</th>
                   <th className="px-4 py-3 text-left">Action</th>
@@ -264,9 +272,10 @@ export function CreateEmployeeClient({ role }: { role: string }) {
                     <td className="px-4 py-3 text-gray-600">{emp.vendorName || <span className="text-gray-300">—</span>}</td>
                     <td className="px-4 py-3 text-gray-600">{emp.designation || <span className="text-gray-300">—</span>}</td>
                     <td className="px-4 py-3 text-gray-600">{emp.district || <span className="text-gray-300">—</span>}</td>
-                    <td className="px-4 py-3 text-gray-600">{emp.taluka || <span className="text-gray-300">—</span>}</td>
+                    <td className="px-4 py-3 text-gray-600">{emp.assembly || <span className="text-gray-300">—</span>}</td>
                     <td className="px-4 py-3 text-gray-600">{emp.phone || <span className="text-gray-300">—</span>}</td>
                     <td className="px-4 py-3 text-gray-600">{emp.email || <span className="text-gray-300">—</span>}</td>
+                    <td className="px-4 py-3 text-gray-600">{emp.salary || <span className="text-gray-300">—</span>}</td>
                     <td className="px-4 py-3">
                       <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${
                         emp.status === 'active'
@@ -334,18 +343,18 @@ export function CreateEmployeeClient({ role }: { role: string }) {
               <div>
                 <label className="label">District</label>
                 <select className="input" value={editForm.district}
-                  onChange={(e) => setEditForm({ ...editForm, district: e.target.value, taluka: '' })}>
+                  onChange={(e) => setEditForm({ ...editForm, district: e.target.value, assembly: '' })}>
                   <option value="">Select District</option>
-                  {districts.map((d) => <option key={d} value={d}>{d}</option>)}
+                  {assemblyDistricts.map((d) => <option key={d} value={d}>{d}</option>)}
                 </select>
               </div>
               <div>
-                <label className="label">Taluka</label>
-                <select className="input" value={editForm.taluka}
-                  onChange={(e) => setEditForm({ ...editForm, taluka: e.target.value })}
+                <label className="label">Assembly</label>
+                <select className="input" value={editForm.assembly}
+                  onChange={(e) => setEditForm({ ...editForm, assembly: e.target.value })}
                   disabled={!editForm.district}>
-                  <option value="">{editForm.district ? 'Select Taluka' : 'Select District first'}</option>
-                  {(maharashtraData[editForm.district] || []).map((t) => <option key={t} value={t}>{t}</option>)}
+                  <option value="">{editForm.district ? 'Select Assembly' : 'Select District first'}</option>
+                  {(assemblyData[editForm.district] || []).map((a) => <option key={a} value={a}>{a}</option>)}
                 </select>
               </div>
               <div>
@@ -358,6 +367,11 @@ export function CreateEmployeeClient({ role }: { role: string }) {
                 <label className="label">Email</label>
                 <input type="email" className="input" value={editForm.email}
                   onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} />
+              </div>
+              <div>
+                <label className="label">Salary</label>
+                <input className="input" value={editForm.salary}
+                  onChange={(e) => setEditForm({ ...editForm, salary: e.target.value })} />
               </div>
               <div>
                 <label className="label">Status</label>
