@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
   const url = new URL(req.url);
   const date = url.searchParams.get('date');
 
-  const query: any = {};
+  const query: any = { deleted: { $ne: true } };
   if (session.role === 'admin') {
     const hrId = url.searchParams.get('hrId');
     if (hrId) query.markedByHrId = hrId;

@@ -29,6 +29,11 @@ interface HrUser {
   email: string;
 }
 
+interface Vendor {
+  _id: string;
+  name: string;
+}
+
 const emptyForm = {
   name: '', employeeId: '', designation: '', district: '', assembly: '',
   phone: '', email: '', vendorName: '', salary: '', status: 'active', joinDate: '',
@@ -41,10 +46,12 @@ export function CreateEmployeeClient({ role }: { role: string }) {
   const [submitting, setSubmitting] = useState(false);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [hrUsers, setHrUsers] = useState<HrUser[]>([]);
+  const [vendors, setVendors] = useState<Vendor[]>([]);
   const [loadingList, setLoadingList] = useState(true);
 
   const [editTarget, setEditTarget] = useState<Employee | null>(null);
   const [editForm, setEditForm] = useState({ ...emptyForm });
+  const [editAssignToHrId, setEditAssignToHrId] = useState('');
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
@@ -57,6 +64,7 @@ export function CreateEmployeeClient({ role }: { role: string }) {
 
   useEffect(() => {
     loadEmployees();
+    fetch('/api/vendors').then((r) => r.json()).then((d) => setVendors(d.vendors || []));
     if (isAdmin) {
       fetch('/api/admin/users')
         .then((r) => r.json())
@@ -88,6 +96,7 @@ export function CreateEmployeeClient({ role }: { role: string }) {
 
   function openEdit(emp: Employee) {
     setEditTarget(emp);
+    setEditAssignToHrId('');
     setEditForm({
       name: emp.name,
       employeeId: emp.employeeId || '',
@@ -108,10 +117,11 @@ export function CreateEmployeeClient({ role }: { role: string }) {
     if (!editTarget) return;
     setSaving(true);
     try {
+      const body = { ...editForm, ...(isAdmin && editAssignToHrId ? { assignToHrId: editAssignToHrId } : {}) };
       const res = await fetch(`/api/employees/${editTarget._id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(editForm),
+        body: JSON.stringify(body),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed');
@@ -162,8 +172,11 @@ export function CreateEmployeeClient({ role }: { role: string }) {
           </div>
           <div>
             <label className="label">Vendor Name <span className="text-red-500">*</span></label>
-            <input className="input" placeholder="e.g. ABC Vendors" value={form.vendorName}
-              onChange={(e) => setForm({ ...form, vendorName: e.target.value })} required />
+            <select className="input" value={form.vendorName}
+              onChange={(e) => setForm({ ...form, vendorName: e.target.value })} required>
+              <option value="">Select Vendor</option>
+              {vendors.map((v) => <option key={v._id} value={v.name}>{v.name}</option>)}
+            </select>
           </div>
           <div>
             <label className="label">Designation</label>
@@ -294,11 +307,13 @@ export function CreateEmployeeClient({ role }: { role: string }) {
                           className="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50 transition-colors">
                           <Pencil size={15} />
                         </button>
-                        <button onClick={() => handleDelete(emp._id, emp.name)}
-                          disabled={deletingId === emp._id}
-                          className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50">
-                          {deletingId === emp._id ? <Spinner size={15} /> : <Trash2 size={15} />}
-                        </button>
+                        {isAdmin && (
+                          <button onClick={() => handleDelete(emp._id, emp.name)}
+                            disabled={deletingId === emp._id}
+                            className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50">
+                            {deletingId === emp._id ? <Spinner size={15} /> : <Trash2 size={15} />}
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -332,8 +347,11 @@ export function CreateEmployeeClient({ role }: { role: string }) {
               </div>
               <div>
                 <label className="label">Vendor Name <span className="text-red-500">*</span></label>
-                <input className="input" value={editForm.vendorName} required
-                  onChange={(e) => setEditForm({ ...editForm, vendorName: e.target.value })} />
+                <select className="input" value={editForm.vendorName} required
+                  onChange={(e) => setEditForm({ ...editForm, vendorName: e.target.value })}>
+                  <option value="">Select Vendor</option>
+                  {vendors.map((v) => <option key={v._id} value={v.name}>{v.name}</option>)}
+                </select>
               </div>
               <div>
                 <label className="label">Designation</label>
@@ -386,6 +404,18 @@ export function CreateEmployeeClient({ role }: { role: string }) {
                 <input type="date" className="input" value={editForm.joinDate}
                   onChange={(e) => setEditForm({ ...editForm, joinDate: e.target.value })} />
               </div>
+              {isAdmin && (
+                <div>
+                  <label className="label">Assign to HR</label>
+                  <select className="input" value={editAssignToHrId}
+                    onChange={(e) => setEditAssignToHrId(e.target.value)}>
+                    <option value="">— Keep current HR —</option>
+                    {hrUsers.map((u) => (
+                      <option key={u._id} value={u._id}>{u.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
               <div className="sm:col-span-2 flex justify-end gap-3 pt-2">
                 <button type="button" onClick={() => setEditTarget(null)}
                   className="px-4 py-2 rounded-lg border border-[var(--border)] text-sm hover:bg-gray-50">

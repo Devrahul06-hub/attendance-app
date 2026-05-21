@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
   const status = url.searchParams.get('status');
   const search = url.searchParams.get('search');
 
-  const query: any = {};
+  const query: any = { deleted: { $ne: true } };
   if (date) query.date = date;
   if (hrId) query.markedByHrId = hrId;
   if (status && ['present', 'absent', 'half-day', 'paid-leave', 'not-selected'].includes(status)) query.status = status;

@@ -122,13 +122,6 @@ export function EmployeeCalendarModal({ employee, onClose, onAttendanceAdded }: 
   const recordByDate = Object.fromEntries(records.map((r) => [r.date, r]));
   const selectedRecord = selectedDate ? recordByDate[selectedDate] : null;
 
-  function openAddForm() {
-    setForm({ ...emptyForm });
-    setInPhotoFile(null); setOutPhotoFile(null);
-    setInPhotoPreview(''); setOutPhotoPreview('');
-    setEditMode(false);
-  }
-
   function openEditForm(rec: AttendanceRecord) {
     setForm({
       status: rec.status,
@@ -353,16 +346,11 @@ export function EmployeeCalendarModal({ employee, onClose, onAttendanceAdded }: 
                   <h3 className="text-sm font-semibold text-gray-700">
                     {new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', weekday: 'short' })}
                   </h3>
-                  {selectedRecord && !editMode && selectedRecord.status !== 'absent' && (
+                  {selectedRecord && !editMode && (
                     <button onClick={() => openEditForm(selectedRecord)}
                       className="flex items-center gap-1 text-xs text-blue-600 hover:bg-blue-50 px-2 py-1 rounded-lg transition-colors">
                       <Pencil size={12} /> Edit
                     </button>
-                  )}
-                  {selectedRecord && !editMode && selectedRecord.status === 'absent' && (
-                    <span className="text-xs text-red-400 bg-red-50 border border-red-100 px-2 py-1 rounded-lg">
-                      Locked
-                    </span>
                   )}
                   {editMode && (
                     <button onClick={() => setEditMode(false)}

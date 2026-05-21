@@ -12,6 +12,7 @@ export interface IUser extends Document {
   salary?: string;
   status: 'active' | 'inactive';
   joinDate?: string;
+  deleted?: boolean;
   createdAt: Date;
 }
 
@@ -39,6 +40,7 @@ const UserSchema = new Schema<IUser>(
     salary: { type: String, trim: true },
     status: { type: String, enum: ['active', 'inactive'], default: 'active' },
     joinDate: { type: String, trim: true },
+    deleted: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

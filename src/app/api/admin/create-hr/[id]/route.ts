@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { dbConnect } from '@/lib/db';
 import User from '@/models/User';
+import Attendance from '@/models/Attendance';
 import { getSession } from '@/lib/auth';
 
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
@@ -37,6 +38,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
   if (session.role !== 'admin') return NextResponse.json({ error: 'Admins only' }, { status: 403 });
 
   await dbConnect();
-  await User.findByIdAndDelete(params.id);
+  await User.findByIdAndUpdate(params.id, { deleted: true });
+  await Attendance.updateMany({ markedByHrId: params.id }, { deleted: true });
   return NextResponse.json({ success: true });
 }

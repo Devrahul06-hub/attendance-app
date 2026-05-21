@@ -72,6 +72,7 @@ export async function GET(req: NextRequest) {
   if (session.role === 'admin' && hrId) {
     query.addedByHrId = hrId;
   }
+  query.deleted = { $ne: true };
 
   const employees = await Employee.find(query).sort({ createdAt: -1 }).lean();
   return NextResponse.json({ employees });

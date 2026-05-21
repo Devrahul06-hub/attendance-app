@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
 
   await dbConnect();
 
-  const query: any = { phone };
+  const query: any = { phone, deleted: { $ne: true } };
   if (month) {
     query.date = { $regex: `^${month}` };
   }

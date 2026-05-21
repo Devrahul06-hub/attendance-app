@@ -59,7 +59,7 @@ export async function GET(req: NextRequest) {
   const status = url.searchParams.get('status');
   const search = url.searchParams.get('search');
 
-  const query: any = { markedByHrId: session.userId };
+  const query: any = { markedByHrId: session.userId, deleted: { $ne: true } };
   if (date) query.date = date;
   if (project) query.project = { $regex: project, $options: 'i' };
   if (status && status !== 'all') query.status = status;

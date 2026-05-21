@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
 
     await dbConnect();
 
-    const user = await User.findOne({ email: email.toLowerCase() });
+    const user = await User.findOne({ email: email.toLowerCase(), deleted: { $ne: true } });
     if (!user) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
     }

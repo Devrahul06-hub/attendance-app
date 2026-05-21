@@ -49,6 +49,6 @@ export async function GET() {
   if (session.role !== 'admin') return NextResponse.json({ error: 'Admins only' }, { status: 403 });
 
   await dbConnect();
-  const hrs = await User.find({ role: 'employee' }, { passwordHash: 0 }).sort({ createdAt: -1 }).lean();
+  const hrs = await User.find({ role: 'employee', deleted: { $ne: true } }, { passwordHash: 0 }).sort({ createdAt: -1 }).lean();
   return NextResponse.json({ hrs });
 }

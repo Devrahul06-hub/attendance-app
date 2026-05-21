@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, CalendarCheck2, LogOut, ShieldPlus } from 'lucide-react';
+import { LayoutDashboard, CalendarCheck2, LogOut, ShieldPlus, Store } from 'lucide-react';
 import { Logo } from './Logo';
 import clsx from 'clsx';
 import toast from 'react-hot-toast';
@@ -22,6 +22,7 @@ export function Sidebar({ role, open, onClose }: SidebarProps) {
     { href: '/attendance', label: 'Attendance', icon: CalendarCheck2 },
     ...(role === 'admin' ? [
       { href: '/create-hr', label: 'Create HR', icon: ShieldPlus },
+      { href: '/vendor', label: 'Vendors', icon: Store },
       { href: '/admin', label: 'Admin Panel', icon: LayoutDashboard },
     ] : []),
   ];

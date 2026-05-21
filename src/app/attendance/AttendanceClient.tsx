@@ -1,9 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { UserPlus, Search, FileSpreadsheet, Filter, Trash2 } from 'lucide-react';
+import { UserPlus, Search, FileSpreadsheet, Filter, Trash2, Pencil, X } from 'lucide-react';
 import { Spinner } from '@/components/Spinner';
 import { EmployeeCalendarModal } from '@/components/EmployeeCalendarModal';
+import { assemblyData, assemblyDistricts } from '@/data/assembly';
 import toast from 'react-hot-toast';
 
 interface Employee {
@@ -42,7 +43,14 @@ export function AttendanceClient({ role }: { role: string }) {
   const [calendarEmployee, setCalendarEmployee] = useState<Employee | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [exporting, setExporting] = useState(false);
+  const [vendors, setVendors] = useState<{ _id: string; name: string }[]>([]);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [editTarget, setEditTarget] = useState<Employee | null>(null);
+  const [editForm, setEditForm] = useState({
+    name: '', employeeId: '', vendorName: '', designation: '', district: '', assembly: '',
+    phone: '', email: '', salary: '', status: 'active', joinDate: '',
+  });
+  const [saving, setSaving] = useState(false);
 
   function fetchEmployees(hrId?: string) {
     setLoading(true);
@@ -56,6 +64,7 @@ export function AttendanceClient({ role }: { role: string }) {
 
   useEffect(() => {
     fetchEmployees();
+    fetch('/api/vendors').then((r) => r.json()).then((d) => setVendors(d.vendors || []));
     if (isAdmin) {
       fetch('/api/admin/users')
         .then((r) => r.json())
@@ -125,6 +134,45 @@ export function AttendanceClient({ role }: { role: string }) {
       toast.error(err.message, { id: toastId });
     } finally {
       setExporting(false);
+    }
+  }
+
+  function openEdit(emp: Employee) {
+    setEditTarget(emp);
+    setEditForm({
+      name: emp.name,
+      employeeId: emp.employeeId || '',
+      vendorName: emp.vendorName || '',
+      designation: emp.designation || '',
+      district: emp.district || '',
+      assembly: emp.assembly || '',
+      phone: emp.phone || '',
+      email: emp.email || '',
+      salary: emp.salary || '',
+      status: emp.status,
+      joinDate: emp.joinDate || '',
+    });
+  }
+
+  async function handleEdit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editTarget) return;
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/employees/${editTarget._id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editForm),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed');
+      toast.success('Employee updated');
+      setEditTarget(null);
+      fetchEmployees(filterHrId || undefined);
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -286,12 +334,20 @@ export function AttendanceClient({ role }: { role: string }) {
                       {emp.joinDate ? new Date(emp.joinDate).toLocaleDateString('en-IN') : <span className="text-gray-300">—</span>}
                     </td>
                     <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
-                      <button
-                        onClick={() => handleDelete(emp._id, emp.name)}
-                        disabled={deletingId === emp._id}
-                        className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50">
-                        {deletingId === emp._id ? <Spinner size={15} /> : <Trash2 size={15} />}
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => openEdit(emp)}
+                          className="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50 transition-colors">
+                          <Pencil size={15} />
+                        </button>
+                        {isAdmin && (
+                          <button
+                            onClick={() => handleDelete(emp._id, emp.name)}
+                            disabled={deletingId === emp._id}
+                            className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50">
+                            {deletingId === emp._id ? <Spinner size={15} /> : <Trash2 size={15} />}
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -307,6 +363,99 @@ export function AttendanceClient({ role }: { role: string }) {
         employee={calendarEmployee}
         onClose={() => setCalendarEmployee(null)}
       />
+    )}
+
+    {editTarget && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+        <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--border)]">
+            <h3 className="font-semibold text-lg">Edit Employee — {editTarget.name}</h3>
+            <button onClick={() => setEditTarget(null)} className="p-1.5 rounded-lg hover:bg-gray-100">
+              <X size={18} />
+            </button>
+          </div>
+          <form onSubmit={handleEdit} className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="label">Employee Name <span className="text-red-500">*</span></label>
+              <input className="input" value={editForm.name} required
+                onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} />
+            </div>
+            <div>
+              <label className="label">Employee ID</label>
+              <input className="input" value={editForm.employeeId}
+                onChange={(e) => setEditForm({ ...editForm, employeeId: e.target.value })} />
+            </div>
+            <div>
+              <label className="label">Vendor Name <span className="text-red-500">*</span></label>
+              <select className="input" value={editForm.vendorName} required
+                onChange={(e) => setEditForm({ ...editForm, vendorName: e.target.value })}>
+                <option value="">Select Vendor</option>
+                {vendors.map((v) => <option key={v._id} value={v.name}>{v.name}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="label">Designation</label>
+              <input className="input" value={editForm.designation}
+                onChange={(e) => setEditForm({ ...editForm, designation: e.target.value })} />
+            </div>
+            <div>
+              <label className="label">District</label>
+              <select className="input" value={editForm.district}
+                onChange={(e) => setEditForm({ ...editForm, district: e.target.value, assembly: '' })}>
+                <option value="">Select District</option>
+                {assemblyDistricts.map((d) => <option key={d} value={d}>{d}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="label">Assembly</label>
+              <select className="input" value={editForm.assembly}
+                onChange={(e) => setEditForm({ ...editForm, assembly: e.target.value })}
+                disabled={!editForm.district}>
+                <option value="">{editForm.district ? 'Select Assembly' : 'Select District first'}</option>
+                {(assemblyData[editForm.district] || []).map((a) => <option key={a} value={a}>{a}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="label">Phone <span className="text-red-500">*</span></label>
+              <input className="input" value={editForm.phone} required
+                onChange={(e) => setEditForm({ ...editForm, phone: e.target.value.replace(/\D/g, '') })}
+                maxLength={10} />
+            </div>
+            <div>
+              <label className="label">Email</label>
+              <input type="email" className="input" value={editForm.email}
+                onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} />
+            </div>
+            <div>
+              <label className="label">Salary</label>
+              <input className="input" value={editForm.salary}
+                onChange={(e) => setEditForm({ ...editForm, salary: e.target.value })} />
+            </div>
+            <div>
+              <label className="label">Status</label>
+              <select className="input" value={editForm.status}
+                onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </select>
+            </div>
+            <div>
+              <label className="label">Join Date</label>
+              <input type="date" className="input" value={editForm.joinDate}
+                onChange={(e) => setEditForm({ ...editForm, joinDate: e.target.value })} />
+            </div>
+            <div className="sm:col-span-2 flex justify-end gap-3 pt-2">
+              <button type="button" onClick={() => setEditTarget(null)}
+                className="px-4 py-2 rounded-lg border border-[var(--border)] text-sm hover:bg-gray-50">
+                Cancel
+              </button>
+              <button type="submit" className="btn-primary" disabled={saving}>
+                {saving ? <Spinner size={18} /> : 'Save Changes'}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
     )}
     </>
   );

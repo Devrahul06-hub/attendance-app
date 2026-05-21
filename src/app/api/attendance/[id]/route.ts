@@ -19,10 +19,6 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     ? { _id: params.id }
     : { _id: params.id, markedByHrId: session.userId };
 
-  const existing = await Attendance.findOne(filter);
-  if (!existing) return NextResponse.json({ error: 'Record not found' }, { status: 404 });
-  if (existing.status === 'absent') return NextResponse.json({ error: 'Absent records cannot be edited' }, { status: 403 });
-
   const record = await Attendance.findOneAndUpdate(
     filter,
     { employeeName: employeeName.trim(), phone: phone.trim(), project: project?.trim() || '', date, inTime, outTime, status, remarks, inPhoto, outPhoto },

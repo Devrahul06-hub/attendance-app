@@ -14,6 +14,7 @@ export interface IAttendance extends Document {
   markedByHrId: string;
   markedByHrName: string;
   markedByHrEmail: string;
+  deleted?: boolean;
   createdAt: Date;
 }
 
@@ -32,6 +33,7 @@ const AttendanceSchema = new Schema<IAttendance>(
     markedByHrId: { type: String, required: true, index: true },
     markedByHrName: { type: String, required: true },
     markedByHrEmail: { type: String, required: true },
+    deleted: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

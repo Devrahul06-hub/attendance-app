@@ -18,10 +18,10 @@ export async function GET() {
   const date = todayDateString();
 
   const [totalUsers, presentToday, absentToday, totalRecords] = await Promise.all([
-    User.countDocuments({ role: 'employee' }),
-    Attendance.countDocuments({ date, status: 'present' }),
-    Attendance.countDocuments({ date, status: 'absent' }),
-    Attendance.countDocuments({}),
+    User.countDocuments({ role: 'employee', deleted: { $ne: true } }),
+    Attendance.countDocuments({ date, status: 'present', deleted: { $ne: true } }),
+    Attendance.countDocuments({ date, status: 'absent', deleted: { $ne: true } }),
+    Attendance.countDocuments({ deleted: { $ne: true } }),
   ]);
 
   return NextResponse.json({ totalUsers, presentToday, absentToday, totalRecords, todayDate: date });

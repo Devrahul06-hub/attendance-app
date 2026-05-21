@@ -14,6 +14,7 @@ export interface IEmployee extends Document {
   joinDate?: string;
   addedByHrId: string;
   addedByHrName: string;
+  deleted?: boolean;
   createdAt: Date;
 }
 
@@ -32,6 +33,7 @@ const EmployeeSchema = new Schema<IEmployee>(
     joinDate: { type: String, trim: true },
     addedByHrId: { type: String, required: true },
     addedByHrName: { type: String, required: true },
+    deleted: { type: Boolean, default: false },
   },
   { timestamps: true }
 );
