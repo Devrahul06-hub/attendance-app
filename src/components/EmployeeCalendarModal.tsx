@@ -109,9 +109,10 @@ export function EmployeeCalendarModal({ employee, onClose, onAttendanceAdded }: 
 
   useEffect(() => { loadRecords(); }, [month]); // eslint-disable-line
 
-  // Reset edit mode when date changes
+  // Reset form and edit mode when date changes
   useEffect(() => {
     setEditMode(false);
+    setForm({ ...emptyForm });
     setInPhotoFile(null); setOutPhotoFile(null);
     setInPhotoPreview(''); setOutPhotoPreview('');
   }, [selectedDate]);

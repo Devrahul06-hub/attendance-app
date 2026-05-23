@@ -15,12 +15,8 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
   await dbConnect();
 
-  const filter = session.role === 'admin'
-    ? { _id: params.id }
-    : { _id: params.id, markedByHrId: session.userId };
-
   const record = await Attendance.findOneAndUpdate(
-    filter,
+    { _id: params.id },
     { employeeName: employeeName.trim(), phone: phone.trim(), project: project?.trim() || '', date, inTime, outTime, status, remarks, inPhoto, outPhoto },
     { new: true }
   );
@@ -35,11 +31,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
 
   await dbConnect();
 
-  const filter = session.role === 'admin'
-    ? { _id: params.id }
-    : { _id: params.id, markedByHrId: session.userId };
-
-  const record = await Attendance.findOneAndDelete(filter);
+  const record = await Attendance.findOneAndDelete({ _id: params.id });
   if (!record) return NextResponse.json({ error: 'Record not found' }, { status: 404 });
 
   return NextResponse.json({ ok: true });
