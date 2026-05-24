@@ -2,10 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import {
-  Users, CheckCircle2, XCircle, FileSpreadsheet, Download,
-  Search, ImageIcon, Filter, Trash2,
-} from 'lucide-react';
+import { FileSpreadsheet, Download, Search, ImageIcon, Filter, Trash2, X } from 'lucide-react';
 import { Spinner } from '@/components/Spinner';
 
 interface HrUser {
@@ -62,6 +59,16 @@ export function AdminClient() {
   const [loading, setLoading] = useState(true);
   const [empLoading, setEmpLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [exportingEmps, setExportingEmps] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [exportStart, setExportStart] = useState(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
+  });
+  const [exportEnd, setExportEnd] = useState(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  });
 
   // Attendance filters
   const [filterDate, setFilterDate] = useState(() => {
@@ -144,6 +151,62 @@ export function AdminClient() {
     }
   }
 
+  async function exportEmployees() {
+    setExportingEmps(true);
+    const toastId = toast.loading('Preparing employee list…');
+    try {
+      const params = new URLSearchParams();
+      if (empFilterHrId) params.set('hrId', empFilterHrId);
+      const res = await fetch(`/api/admin/export-employees?${params.toString()}`);
+      if (!res.ok) throw new Error('Export failed');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `employees-${new Date().toISOString().slice(0, 10)}.xlsx`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success('Employee list downloaded!', { id: toastId });
+    } catch {
+      toast.error('Export failed. Try again.', { id: toastId });
+    } finally {
+      setExportingEmps(false);
+    }
+  }
+
+  async function exportCombined() {
+    if (!exportStart || !exportEnd) {
+      toast.error('Please select both start and end dates.');
+      return;
+    }
+    if (exportStart > exportEnd) {
+      toast.error('Start date must be before end date.');
+      return;
+    }
+    setExporting(true);
+    setShowExportModal(false);
+    const toastId = toast.loading('Preparing Excel report…');
+    try {
+      const params = new URLSearchParams({ startDate: exportStart, endDate: exportEnd });
+      const res = await fetch(`/api/admin/export-combined?${params.toString()}`);
+      if (!res.ok) throw new Error('Export failed');
+
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `attendance-report-${exportStart}-to-${exportEnd}.xlsx`;
+      a.click();
+      URL.revokeObjectURL(url);
+
+      toast.success('Excel report downloaded!', { id: toastId });
+    } catch {
+      toast.error('Export failed. Try again.', { id: toastId });
+    } finally {
+      setExporting(false);
+    }
+  }
+
   async function exportExcel(hrId?: string) {
     setExporting(true);
     const toastId = toast.loading('Preparing Excel file…');
@@ -190,11 +253,57 @@ export function AdminClient() {
             Monitor attendance records and filter by HR.
           </p>
         </div>
-        <button onClick={() => exportExcel()} className="btn-success" disabled={exporting}>
+        <button onClick={() => setShowExportModal(true)} className="btn-success" disabled={exporting}>
           {exporting ? <Spinner size={16} /> : <FileSpreadsheet size={16} />}
           {exporting ? 'Preparing…' : 'Export all to Excel'}
         </button>
       </div>
+
+      {/* Date range export modal */}
+      {showExportModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold">Export Attendance Report</h2>
+              <button onClick={() => setShowExportModal(false)} className="p-1 rounded-lg hover:bg-gray-100 transition-colors">
+                <X size={18} />
+              </button>
+            </div>
+            <p className="text-sm text-gray-500 mb-5">
+              Select a date range. The download will include 3 sheets: Muster Roll, Daily Report, and Staff Report.
+            </p>
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              <div>
+                <label className="label text-xs">From Date</label>
+                <input
+                  type="date"
+                  className="input py-2 text-sm"
+                  value={exportStart}
+                  onChange={(e) => setExportStart(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="label text-xs">To Date</label>
+                <input
+                  type="date"
+                  className="input py-2 text-sm"
+                  value={exportEnd}
+                  onChange={(e) => setExportEnd(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => setShowExportModal(false)} className="btn-secondary flex-1 py-2.5">
+                Cancel
+              </button>
+              <button onClick={exportCombined} className="btn-success flex-1 py-2.5">
+                <FileSpreadsheet size={16} />
+                Download Excel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
 
       {/* Tabs */}
@@ -381,6 +490,10 @@ export function AdminClient() {
               <div className="flex items-end gap-2">
                 <button onClick={applyEmpFilter} className="btn-primary py-2 text-sm flex-1">Apply</button>
                 <button onClick={resetEmpFilter} className="btn-secondary py-2 text-sm">Reset</button>
+                <button onClick={exportEmployees} disabled={exportingEmps} className="btn-success py-2 text-sm">
+                  {exportingEmps ? <Spinner size={14} /> : <FileSpreadsheet size={14} />}
+                  Export
+                </button>
               </div>
             </div>
           </div>
@@ -496,23 +609,6 @@ export function AdminClient() {
   );
 }
 
-function StatCard({
-  icon, label, value, color,
-}: { icon: React.ReactNode; label: string; value: number; color: 'brand' | 'emerald' | 'red' | 'violet' }) {
-  const map = {
-    brand: 'bg-brand-50 text-brand-700',
-    emerald: 'bg-emerald-50 text-emerald-700',
-    red: 'bg-red-50 text-red-700',
-    violet: 'bg-violet-50 text-violet-700',
-  };
-  return (
-    <div className="card p-5">
-      <div className={`w-9 h-9 rounded-lg flex items-center justify-center mb-3 ${map[color]}`}>{icon}</div>
-      <div className="text-2xl font-bold">{value}</div>
-      <div className="text-xs text-gray-500 mt-0.5">{label}</div>
-    </div>
-  );
-}
 
 function TabButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
