@@ -43,7 +43,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   const updateOp: any = { $set: setFields };
   if (!trimmedId) updateOp.$unset = { employeeId: '' };
 
-  const employee = await Employee.findByIdAndUpdate(params.id, updateOp, { new: true });
+  const employee = await Employee.findByIdAndUpdate(params.id, updateOp, { new: true, runValidators: false });
 
   if (!employee) return NextResponse.json({ error: 'Employee not found' }, { status: 404 });
   return NextResponse.json({ employee });
