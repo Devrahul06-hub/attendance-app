@@ -36,7 +36,7 @@ interface EmpRecord {
   assembly?: string;
   phone: string;
   email?: string;
-  status: 'active' | 'inactive';
+  status: 'training' | 'active' | 'backout';
   joinDate?: string;
   addedByHrId: string;
   addedByHrName: string;
@@ -543,9 +543,11 @@ export function AdminClient() {
                             <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${
                               e.status === 'active'
                                 ? 'bg-green-50 text-green-700 border-green-200'
+                                : e.status === 'training'
+                                ? 'bg-yellow-50 text-yellow-700 border-yellow-200'
                                 : 'bg-red-50 text-red-600 border-red-200'
                             }`}>
-                              {e.status === 'active' ? 'Active' : 'Inactive'}
+                              {e.status === 'active' ? 'Active' : e.status === 'training' ? 'Training in process' : 'Back-out'}
                             </span>
                           </td>
                           <td className="px-5 py-3 text-gray-600">{e.addedByHrName || <span className="text-gray-300">—</span>}</td>

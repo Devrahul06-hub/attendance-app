@@ -18,7 +18,7 @@ interface Employee {
   phone: string;
   email?: string;
   salary?: string;
-  status: 'active' | 'inactive';
+  status: 'training' | 'active' | 'backout';
   joinDate?: string;
 }
 
@@ -325,9 +325,11 @@ export function AttendanceClient({ role }: { role: string }) {
                       <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${
                         emp.status === 'active'
                           ? 'bg-green-50 text-green-700 border-green-200'
+                          : emp.status === 'training'
+                          ? 'bg-yellow-50 text-yellow-700 border-yellow-200'
                           : 'bg-red-50 text-red-600 border-red-200'
                       }`}>
-                        {emp.status === 'active' ? 'Active' : 'Inactive'}
+                        {emp.status === 'active' ? 'Active' : emp.status === 'training' ? 'Training in process' : 'Back-out'}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-gray-600">
@@ -435,8 +437,9 @@ export function AttendanceClient({ role }: { role: string }) {
               <label className="label">Status</label>
               <select className="input" value={editForm.status}
                 onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}>
+                <option value="training">Training in process</option>
                 <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
+                <option value="backout">Back-out</option>
               </select>
             </div>
             <div>

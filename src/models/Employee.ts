@@ -10,7 +10,7 @@ export interface IEmployee extends Document {
   email?: string;
   vendorName: string;
   salary?: string;
-  status: 'active' | 'inactive';
+  status: 'training' | 'active' | 'backout';
   joinDate?: string;
   addedByHrId: string;
   addedByHrName: string;
@@ -29,7 +29,7 @@ const EmployeeSchema = new Schema<IEmployee>(
     email: { type: String, trim: true, lowercase: true },
     vendorName: { type: String, required: true, trim: true },
     salary: { type: String, trim: true },
-    status: { type: String, enum: ['active', 'inactive'], default: 'active' },
+    status: { type: String, enum: ['training', 'active', 'backout'], default: 'active' },
     joinDate: { type: String, trim: true },
     addedByHrId: { type: String, required: true },
     addedByHrName: { type: String, required: true },

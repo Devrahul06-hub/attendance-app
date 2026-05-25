@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
     'Phone': e.phone || '',
     'Email': e.email || '',
     'Salary': e.salary || '',
-    'Status': e.status === 'active' ? 'Active' : 'Inactive',
+    'Status': e.status === 'active' ? 'Active' : e.status === 'training' ? 'Training in process' : 'Back-out',
     'Join Date': e.joinDate || '',
     'Added by (HR)': e.addedByHrName || '',
   }));
