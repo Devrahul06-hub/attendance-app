@@ -29,7 +29,7 @@ function statusCode(status?: string): string {
   if (status === 'present') return '1P';
   if (status === 'half-day') return '1H';
   if (status === 'absent') return 'A';
-  if (status === 'paid-leave') return 'PL';
+  if (status === 'paid-leave') return 'WO';
   return '-';
 }
 
@@ -38,7 +38,7 @@ function statusLabel(status?: string): string {
   if (status === 'present') return 'Present';
   if (status === 'half-day') return 'Half Day';
   if (status === 'absent') return 'Absent';
-  if (status === 'paid-leave') return 'Paid Leave';
+  if (status === 'paid-leave') return 'Weekly Off';
   return 'Unmarked';
 }
 
@@ -110,11 +110,15 @@ export async function GET(req: NextRequest) {
   // ===== SHEET 1: Muster Roll =====
   const sheet1Rows: any[][] = [];
 
+  const empBlank = ['', '', '', '', '', '', '', '', '', '', ''];
+
   const header1 = [
-    'S.N.', 'Staff Name', 'Staff Type', 'Days  ➡️',
+    'S.N.', 'Staff Name',
+    'Employee ID', 'Designation', 'District', 'Assembly', 'Phone', 'Email', 'Vendor Name', 'Salary', 'Status', 'Join Date', 'Added By HR',
+    'Days  ➡️',
     ...dates.map(dayLabel),
     'Total \nHours', 'Total \nPresent', 'Total \nAbsent',
-    'Total \nHalf \nDays', 'Total \nPaid \nLeaves', 'Total \nUnmarked',
+    'Total \nHalf \nDays', 'Total \nWeekly \nOff', 'Total \nUnmarked',
     'Total \nOvertime \nHours', 'Total \nFine \nHours',
   ];
   sheet1Rows.push(header1);
@@ -134,17 +138,25 @@ export async function GET(req: NextRequest) {
     const totalUnmarked = dates.filter((d) => !phoneMap[d] || phoneMap[d]?.status === 'not-selected').length;
     const totalWorkHrs = addWorkHours(workHrs);
 
-    sheet1Rows.push([i + 1, emp.name, emp.designation || 'Monthly', 'Attendance State', ...statuses, '', totalPresent, totalAbsent, totalHalfDay, totalPaidLeave, totalUnmarked, '00:00', '00:00']);
-    sheet1Rows.push(['', '', '', 'IN', ...inTimes, '', '', '', '', '', '', '', '']);
-    sheet1Rows.push(['', '', '', 'OUT', ...outTimes, '', '', '', '', '', '', '', '']);
-    sheet1Rows.push(['', '', '', 'WH', ...workHrs, totalWorkHrs, '', '', '', '', '', '', '']);
-    sheet1Rows.push(['', '', '', 'OT', ...dates.map(() => '-'), '', '00:00', '', '', '', '', '', '']);
-    sheet1Rows.push(['', '', '', 'F', ...dates.map(() => '-'), '', '00:00', '', '', '', '', '', '']);
+    const empFields = [
+      emp.employeeId || '', emp.designation || '', emp.district || '', emp.assembly || '',
+      emp.phone || '', emp.email || '', emp.vendorName || '', emp.salary || '',
+      emp.status || '', emp.joinDate || '', emp.addedByHrName || '',
+    ];
+
+    sheet1Rows.push([i + 1, emp.name, ...empFields, 'Attendance State', ...statuses, '', totalPresent, totalAbsent, totalHalfDay, totalPaidLeave, totalUnmarked, '00:00', '00:00']);
+    sheet1Rows.push(['', '', ...empBlank, 'IN', ...inTimes, '', '', '', '', '', '', '', '']);
+    sheet1Rows.push(['', '', ...empBlank, 'OUT', ...outTimes, '', '', '', '', '', '', '', '']);
+    sheet1Rows.push(['', '', ...empBlank, 'WH', ...workHrs, totalWorkHrs, '', '', '', '', '', '', '']);
+    sheet1Rows.push(['', '', ...empBlank, 'OT', ...dates.map(() => '-'), '', '00:00', '', '', '', '', '', '']);
+    sheet1Rows.push(['', '', ...empBlank, 'F', ...dates.map(() => '-'), '', '00:00', '', '', '', '', '', '']);
   });
 
   const ws1 = XLSX.utils.aoa_to_sheet(sheet1Rows);
   ws1['!cols'] = [
-    { wch: 5 }, { wch: 22 }, { wch: 16 }, { wch: 18 },
+    { wch: 5 }, { wch: 22 },
+    { wch: 14 }, { wch: 16 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 22 }, { wch: 18 }, { wch: 10 }, { wch: 14 }, { wch: 12 }, { wch: 18 },
+    { wch: 18 },
     ...dates.map(() => ({ wch: 8 })),
     { wch: 12 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 12 }, { wch: 10 },
   ];

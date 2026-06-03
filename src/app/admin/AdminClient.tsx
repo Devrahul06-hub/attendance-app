@@ -347,7 +347,7 @@ export function AdminClient() {
                   <option value="present">Present</option>
                   <option value="half-day">Half Day</option>
                   <option value="absent">Absent</option>
-                  <option value="paid-leave">Paid Leave</option>
+                  <option value="paid-leave">Weekly Off</option>
                 </select>
               </div>
               <div>
@@ -423,7 +423,7 @@ export function AdminClient() {
                             r.status === 'paid-leave' ? 'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-50 text-purple-700 border border-purple-200' :
                             'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-50 text-gray-500 border border-gray-200'
                           }>
-                            {r.status === 'half-day' ? 'Half Day' : r.status === 'paid-leave' ? 'Paid Leave' : r.status === 'not-selected' ? 'Not Selected' : r.status.charAt(0).toUpperCase() + r.status.slice(1)}
+                            {r.status === 'half-day' ? 'Half Day' : r.status === 'paid-leave' ? 'Weekly Off' : r.status === 'not-selected' ? 'Not Selected' : r.status.charAt(0).toUpperCase() + r.status.slice(1)}
                           </span>
                         </td>
                         <td className="px-5 py-3 text-gray-600 max-w-xs truncate">

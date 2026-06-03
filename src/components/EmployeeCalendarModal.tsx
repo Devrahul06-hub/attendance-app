@@ -62,7 +62,7 @@ function statusLabel(s: string) {
   if (s === 'present') return 'Present';
   if (s === 'absent') return 'Absent';
   if (s === 'half-day') return 'Half Day';
-  if (s === 'paid-leave') return 'Paid Leave';
+  if (s === 'paid-leave') return 'Weekly Off';
   return 'Not Selected';
 }
 
@@ -333,7 +333,7 @@ export function EmployeeCalendarModal({ employee, onClose, onAttendanceAdded }: 
                   { label: 'Present', count: present, color: 'text-green-600', bg: 'bg-green-50 border-green-100' },
                   { label: 'Absent', count: absent, color: 'text-red-500', bg: 'bg-red-50 border-red-100' },
                   { label: 'Half Day', count: halfDay, color: 'text-orange-500', bg: 'bg-orange-50 border-orange-100' },
-                  { label: 'Paid Leave', count: paidLeave, color: 'text-purple-600', bg: 'bg-purple-50 border-purple-100' },
+                  { label: 'Weekly Off', count: paidLeave, color: 'text-purple-600', bg: 'bg-purple-50 border-purple-100' },
                   { label: 'Total', count: records.length, color: 'text-blue-600', bg: 'bg-blue-50 border-blue-100' },
                 ].map(({ label, count, color, bg }) => (
                   <div key={label} className={`rounded-xl border p-2.5 text-center ${bg}`}>
@@ -426,7 +426,7 @@ export function EmployeeCalendarModal({ employee, onClose, onAttendanceAdded }: 
                         <option value="present">Present</option>
                         <option value="half-day">Half Day</option>
                         <option value="absent">Absent</option>
-                        <option value="paid-leave">Paid Leave</option>
+                        <option value="paid-leave">Weekly Off</option>
                       </select>
                       {disableFields && (
                         <p className="text-xs text-gray-400 mt-1">IN/OUT fields disabled for {statusLabel(form.status)}.</p>
