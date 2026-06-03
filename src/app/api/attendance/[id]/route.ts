@@ -15,9 +15,15 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
   await dbConnect();
 
+  const shouldClearTimes = status === 'absent' || status === 'paid-leave';
   const record = await Attendance.findOneAndUpdate(
     { _id: params.id },
-    { employeeName: employeeName.trim(), phone: phone.trim(), project: project?.trim() || '', date, inTime, outTime, status, remarks, inPhoto, outPhoto },
+    {
+      employeeName: employeeName.trim(), phone: phone.trim(), project: project?.trim() || '', date,
+      inTime: shouldClearTimes ? '' : inTime,
+      outTime: shouldClearTimes ? '' : outTime,
+      status, remarks, inPhoto, outPhoto,
+    },
     { new: true }
   );
 

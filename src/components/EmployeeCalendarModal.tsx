@@ -421,7 +421,11 @@ export function EmployeeCalendarModal({ employee, onClose, onAttendanceAdded }: 
                     <div>
                       <label className="label text-xs">1. Status <span className="text-red-500">*</span></label>
                       <select className="input py-1.5 text-sm" value={form.status}
-                        onChange={(e) => setForm((f) => ({ ...f, status: e.target.value as AttendanceStatus }))}>
+                        onChange={(e) => {
+                          const newStatus = e.target.value as AttendanceStatus;
+                          const clearTimes = newStatus === 'absent' || newStatus === 'paid-leave';
+                          setForm((f) => ({ ...f, status: newStatus, ...(clearTimes ? { inTime: '', outTime: '' } : {}) }));
+                        }}>
                         <option value="not-selected">Not Selected</option>
                         <option value="present">Present</option>
                         <option value="half-day">Half Day</option>
