@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight, X, Upload, Pencil } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Spinner } from '@/components/Spinner';
+import { getStatusLabel, getStatusColor } from '@/lib/employeeStatus';
 
 interface Employee {
   _id: string;
@@ -250,13 +251,7 @@ export function EmployeeCalendarModal({ employee, onClose, onAttendanceAdded }: 
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <h2 className="font-bold text-lg">{employee.name}</h2>
-              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${
-                employee.status === 'active'
-                  ? 'bg-green-50 text-green-700 border-green-200'
-                  : employee.status === 'training'
-                  ? 'bg-yellow-50 text-yellow-700 border-yellow-200'
-                  : 'bg-red-50 text-red-600 border-red-200'
-              }`}>{employee.status === 'active' ? 'Active' : employee.status === 'training' ? 'Training in process' : 'Back-out'}</span>
+              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(employee.status)}`}>{getStatusLabel(employee.status)}</span>
             </div>
             <div className="flex flex-wrap gap-x-4 gap-y-0.5 mt-1 text-sm text-gray-500">
               {employee.employeeId && <span>🪪 {employee.employeeId}</span>}

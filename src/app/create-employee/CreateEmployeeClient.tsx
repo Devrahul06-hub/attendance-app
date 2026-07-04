@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import { UserPlus, Pencil, Trash2, X } from 'lucide-react';
 import { Spinner } from '@/components/Spinner';
 import { assemblyData, assemblyDistricts } from '@/data/assembly';
+import { getStatusLabel, getStatusColor } from '@/lib/employeeStatus';
 
 interface Employee {
   _id: string;
@@ -222,6 +223,11 @@ export function CreateEmployeeClient({ role }: { role: string }) {
               <option value="training">Training in process</option>
               <option value="active">Active</option>
               <option value="backout">Back-out</option>
+              <option value="resigned">Resigned</option>
+              <option value="terminated">Terminated</option>
+              <option value="absconded">Absconded</option>
+              <option value="contract_ended">Contract Ended</option>
+              <option value="relieved">Relieved</option>
             </select>
           </div>
           <div>
@@ -292,13 +298,9 @@ export function CreateEmployeeClient({ role }: { role: string }) {
                     <td className="px-4 py-3 text-gray-600">{emp.salary || <span className="text-gray-300">—</span>}</td>
                     <td className="px-4 py-3">
                       <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${
-                        emp.status === 'active'
-                          ? 'bg-green-50 text-green-700 border-green-200'
-                          : emp.status === 'training'
-                          ? 'bg-yellow-50 text-yellow-700 border-yellow-200'
-                          : 'bg-red-50 text-red-600 border-red-200'
+                        getStatusColor(emp.status)
                       }`}>
-                        {emp.status === 'active' ? 'Active' : emp.status === 'training' ? 'Training in process' : 'Back-out'}
+                        {getStatusLabel(emp.status)}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-gray-600">
@@ -401,6 +403,11 @@ export function CreateEmployeeClient({ role }: { role: string }) {
                   <option value="training">Training in process</option>
                   <option value="active">Active</option>
                   <option value="backout">Back-out</option>
+                  <option value="resigned">Resigned</option>
+                  <option value="terminated">Terminated</option>
+                  <option value="absconded">Absconded</option>
+                  <option value="contract_ended">Contract Ended</option>
+                  <option value="relieved">Relieved</option>
                 </select>
               </div>
               <div>

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { FileSpreadsheet, Download, Search, ImageIcon, Filter, Trash2, X } from 'lucide-react';
 import { Spinner } from '@/components/Spinner';
+import { getStatusLabel, getStatusColor } from '@/lib/employeeStatus';
 
 interface HrUser {
   _id: string;
@@ -541,13 +542,9 @@ export function AdminClient() {
                           <td className="px-5 py-3 text-gray-600">{e.email || <span className="text-gray-300">—</span>}</td>
                           <td className="px-5 py-3">
                             <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${
-                              e.status === 'active'
-                                ? 'bg-green-50 text-green-700 border-green-200'
-                                : e.status === 'training'
-                                ? 'bg-yellow-50 text-yellow-700 border-yellow-200'
-                                : 'bg-red-50 text-red-600 border-red-200'
+                              getStatusColor(e.status)
                             }`}>
-                              {e.status === 'active' ? 'Active' : e.status === 'training' ? 'Training in process' : 'Back-out'}
+                              {getStatusLabel(e.status)}
                             </span>
                           </td>
                           <td className="px-5 py-3 text-gray-600">{e.addedByHrName || <span className="text-gray-300">—</span>}</td>

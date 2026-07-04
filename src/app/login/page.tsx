@@ -92,10 +92,6 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <div className="mt-8 p-4 bg-white border border-[var(--border)] rounded-lg text-xs text-gray-600">
-            <div className="font-semibold mb-1">Demo tip</div>
-            The first user who signs up becomes the admin. You can also set <code className="px-1 bg-gray-100 rounded">ADMIN_EMAIL</code> in <code className="px-1 bg-gray-100 rounded">.env.local</code>.
-          </div>
         </div>
       </div>
     </div>

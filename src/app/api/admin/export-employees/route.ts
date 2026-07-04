@@ -3,6 +3,7 @@ import * as XLSX from 'xlsx';
 import { dbConnect } from '@/lib/db';
 import Employee from '@/models/Employee';
 import { getSession } from '@/lib/auth';
+import { getStatusLabel } from '@/lib/employeeStatus';
 
 export async function GET(req: NextRequest) {
   const session = getSession();
@@ -29,7 +30,7 @@ export async function GET(req: NextRequest) {
     'Phone': e.phone || '',
     'Email': e.email || '',
     'Salary': e.salary || '',
-    'Status': e.status === 'active' ? 'Active' : e.status === 'training' ? 'Training in process' : 'Back-out',
+    'Status': getStatusLabel(e.status),
     'Join Date': e.joinDate || '',
     'Added by (HR)': e.addedByHrName || '',
   }));
